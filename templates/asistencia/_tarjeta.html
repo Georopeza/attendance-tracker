@@ -1,0 +1,29 @@
+{% load horas_tags %}
+<article id="tarjeta-{{ emp.pk }}" class="bg-white border rounded-lg p-4 space-y-3">
+  <div class="flex justify-between items-center">
+    <strong>{{ emp.nombre }}</strong>
+    <span class="text-xs px-2 py-0.5 rounded-full
+      {% if estado == 'presente' %}bg-teal-100 text-teal-800{% elif estado == 'se_fue' %}bg-blue-100 text-blue-800{% else %}bg-slate-100 text-slate-600{% endif %}">
+      {% if estado == 'presente' %}Presente{% elif estado == 'se_fue' %}Se fue{% else %}Sin llegar{% endif %}</span>
+  </div>
+  <div class="flex flex-wrap gap-1 text-sm">
+    {% for t in tramos %}<span class="bg-slate-100 rounded px-2">{{ t.entrada|time:"H:i" }} – {% if t.salida %}{{ t.salida|time:"H:i" }}{% else %}en curso{% endif %}</span>
+    {% empty %}<span class="text-slate-500">Sin marcas hoy</span>{% endfor %}
+  </div>
+  {% if error %}<p class="text-sm text-red-700">{{ error }}</p>{% endif %}
+  {# Un solo toque: Entró / Salió con la hora actual del servidor (Venezuela). #}
+  <button class="w-full rounded-lg py-3 font-semibold {% if estado == 'presente' %}border{% else %}bg-blue-700 text-white{% endif %}"
+          hx-post="{% url 'marcar' emp.pk %}" hx-target="#tarjeta-{{ emp.pk }}" hx-swap="outerHTML">
+    {% if estado == 'presente' %}Salió ahora{% else %}Entró ahora{% endif %}</button>
+  {% if tramos %}
+  <div class="flex gap-2 text-sm">
+    <button class="border rounded px-2" hx-post="{% url 'ajustar' emp.pk 'menos' %}" hx-target="#tarjeta-{{ emp.pk }}" hx-swap="outerHTML">−15 min</button>
+    <button class="border rounded px-2" hx-post="{% url 'ajustar' emp.pk 'mas' %}" hx-target="#tarjeta-{{ emp.pk }}" hx-swap="outerHTML">+15 min</button>
+  </div>{% endif %}
+  <div class="grid grid-cols-3 text-sm border-t pt-2">
+    <div><span class="text-slate-500">Normales</span><b class="block text-teal-700">{{ resumen.normales|horas }}</b></div>
+    <div><span class="text-slate-500">Extra</span><b class="block text-blue-700">{{ resumen.extra_turno|horas }}{% if resumen.extra_sin_turno %}<span class="text-violet-700"> +{{ resumen.extra_sin_turno|horas }}</span>{% endif %}</b></div>
+    <div><span class="text-slate-500">Total</span><b class="block">{{ resumen.total|horas }}</b></div>
+  </div>
+  {% if resumen.por_revisar %}<p class="text-xs bg-amber-100 text-amber-800 rounded px-2 py-1">Por revisar: {{ resumen.total_real|horas }} queda exacto</p>{% endif %}
+</article>

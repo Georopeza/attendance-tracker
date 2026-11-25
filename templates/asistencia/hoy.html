@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h1 class="text-xl font-semibold">Hoy · {{ fecha|date:"l j \d\e F" }}</h1>
+{# Tiempo real: la lista se recarga sola cada 5 s, así se ven las marcas de otros coordinadores. #}
+<div id="tarjetas" class="mt-4"
+     hx-get="{% url 'hoy_tarjetas' %}" hx-trigger="load, every 5s" hx-swap="innerHTML"></div>
+{% endblock %}

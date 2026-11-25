@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load horas_tags %}
+{% block contenido %}
+<div class="flex justify-between items-center flex-wrap gap-2">
+  <h1 class="text-xl font-semibold">Semana {{ lunes|date:"j M" }} – {{ domingo|date:"j M" }}</h1>
+  <div class="flex gap-2 text-sm">
+    <a class="border rounded px-2 py-1" href="?semana={{ anterior|date:'Y-m-d' }}">← Anterior</a>
+    <a class="border rounded px-2 py-1" href="?semana={{ siguiente|date:'Y-m-d' }}">Siguiente →</a>
+  </div>
+</div>
+<div class="overflow-x-auto mt-4 bg-white border rounded-lg">
+<table class="w-full text-sm">
+  <thead class="bg-slate-100 text-left text-xs uppercase text-slate-500"><tr>
+    <th class="p-2">Empleado</th><th class="p-2 text-right">Días</th><th class="p-2 text-right">Normales</th>
+    <th class="p-2 text-right">Extra tras turno</th><th class="p-2 text-right">Extra sin turno</th>
+    <th class="p-2 text-right">Total</th><th class="p-2 text-right">vs. promedio ({{ promedio|horas }})</th><th class="p-2"></th></tr></thead>
+  <tbody>
+  {% for f in filas %}
+    <tr class="border-t">
+      <td class="p-2 font-medium">{{ f.empleado.nombre }}</td>
+      <td class="p-2 text-right">{{ f.dias }}</td>
+      <td class="p-2 text-right text-teal-700">{{ f.normales|horas }}</td>
+      <td class="p-2 text-right text-blue-700">{{ f.extra_turno|horas }}</td>
+      <td class="p-2 text-right text-violet-700">{{ f.extra_sin_turno|horas }}</td>
+      <td class="p-2 text-right font-semibold">{{ f.total|horas }}{% if f.por_revisar %} <span class="text-xs bg-amber-100 text-amber-800 rounded px-1">{{ f.por_revisar }} por revisar</span>{% endif %}</td>
+      <td class="p-2 text-right">{{ f.vs_promedio|con_signo }}</td>
+      <td class="p-2 text-right"><button class="border rounded px-2 py-0.5"
+        hx-get="{% url 'desglose' f.empleado.pk %}?semana={{ lunes|date:'Y-m-d' }}" hx-target="#desglose" hx-swap="innerHTML">Ver semana</button></td>
+    </tr>
+  {% empty %}<tr><td class="p-4 text-slate-500" colspan="8">Sin empleados activos.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+<div id="desglose" class="mt-4"></div>
+{% endblock %}

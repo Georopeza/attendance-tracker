@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h1 class="text-xl font-semibold">Disponibilidad</h1>
+<p class="text-sm text-slate-500">Se edita desde Administración → Disponibilidad (en la versión final, con la ficha de la maqueta).</p>
+<div class="overflow-x-auto mt-4 bg-white border rounded-lg">
+<table class="w-full text-sm">
+  <thead class="bg-slate-100 text-xs uppercase text-slate-500"><tr><th class="p-2 text-left">Empleado</th>{% for d in dias %}<th class="p-2">{{ d }}</th>{% endfor %}</tr></thead>
+  <tbody>{% for f in filas %}<tr class="border-t"><td class="p-2 font-medium">{{ f.empleado.nombre }}</td>
+    {% for celda in f.celdas %}<td class="p-2 text-center {% if celda %}bg-teal-50 text-teal-800{% else %}text-slate-400{% endif %}">{% for r in celda %}{{ r }}<br>{% empty %}—{% endfor %}</td>{% endfor %}</tr>{% endfor %}</tbody>
+  <tfoot class="bg-slate-100 font-semibold"><tr><td class="p-2">Pueden venir</td>{% for n in conteo %}<td class="p-2 text-center">{{ n }}</td>{% endfor %}</tr></tfoot>
+</table></div>
+{% endblock %}

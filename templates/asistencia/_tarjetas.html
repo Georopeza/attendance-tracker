@@ -1,0 +1,5 @@
+{% if tarjetas %}
+<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+  {% for t in tarjetas %}{% include "asistencia/_tarjeta.html" with emp=t.emp tramos=t.tramos estado=t.estado resumen=t.resumen error=t.error %}{% endfor %}
+</div>
+{% else %}<p class="text-slate-500">No hay empleados activos. Agrégalos desde Administración.</p>{% endif %}
