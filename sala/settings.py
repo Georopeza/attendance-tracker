@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "turnos",
     "disponibilidad",
     "asistencia",
+    "reportes",
     "bitacora",
 ]
 

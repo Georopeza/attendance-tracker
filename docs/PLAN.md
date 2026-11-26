@@ -25,7 +25,15 @@ Los totales del día nunca se guardan: se calculan desde los tramos, así una co
 - [ ] Etapa 2.
 - [ ] Etapa 3.
 
-## Hosting gratuito (propuesta, por confirmar)
+## Decisión: uso local (reemplaza al hosting en la nube)
+
+El sistema se usará **en un computador local**, sin nube ni hosting. El coordinador comparte la
+información exportando el resumen semanal a **Excel y PDF** (con entradas, salidas y totales por persona)
+y, si hace falta, pasando una copia de los datos. La exportación pasa a ser la siguiente prioridad.
+Pendiente: instalador o acceso directo, copias automáticas, definir sistema operativo y qué significa
+"compartir" (reportes o datos completos).
+
+## Hosting gratuito (descartado; se conserva como referencia)
 
 - Supabase es una base de datos PostgreSQL en la nube (no ejecuta Django). Sirve como **base de datos**
   gratuita (500 MB; se pausa si pasa una semana sin actividad; sin copias automáticas en el plan gratis).

@@ -3,7 +3,9 @@
 {% block contenido %}
 <div class="flex justify-between items-center flex-wrap gap-2">
   <h1 class="text-xl font-semibold">Semana {{ lunes|date:"j M" }} – {{ domingo|date:"j M" }}</h1>
-  <div class="flex gap-2 text-sm">
+  <div class="flex gap-2 text-sm flex-wrap">
+    <a class="border rounded px-2 py-1 bg-white" href="{% url 'reporte_semana' 'xlsx' %}?semana={{ lunes|date:'Y-m-d' }}">Descargar Excel</a>
+    <a class="border rounded px-2 py-1 bg-white" href="{% url 'reporte_semana' 'pdf' %}?semana={{ lunes|date:'Y-m-d' }}">Descargar PDF</a>
     <a class="border rounded px-2 py-1" href="?semana={{ anterior|date:'Y-m-d' }}">← Anterior</a>
     <a class="border rounded px-2 py-1" href="?semana={{ siguiente|date:'Y-m-d' }}">Siguiente →</a>
   </div>

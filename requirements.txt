@@ -5,3 +5,5 @@ gunicorn>=22.0            # servidor en producción
 whitenoise>=6.7           # archivos estáticos
 pytest>=8.0
 pytest-django>=4.8
+openpyxl>=3.1             # exportar a Excel
+reportlab>=4.0            # exportar a PDF (Python puro, funciona en Windows)

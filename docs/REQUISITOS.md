@@ -94,6 +94,12 @@ Ejemplos de referencia (turno 9:00–16:00):
 
 ## 10. Reportes
 
+**Reporte semanal para entregar** (para que el ente superior gestione los pagos; el reporte solo lleva horas):
+resumen del equipo (días, normales, extra tras turno, extra de día sin turno, total) y, por empleado,
+cada día con sus **horas de entrada y salida**, el desglose y el total de la semana. Excel con hoja
+Resumen y hoja Detalle (totales con fórmulas) y PDF con firma del coordinador.
+
+
 - Resumen **semanal y mensual**, exportable a **Excel y PDF**, con el mismo desglose.
   El mensual es la suma de las semanas (por definir cómo se reparte una semana que cruza dos meses).
 - Historial por semana y mes.
