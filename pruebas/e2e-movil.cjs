@@ -12,6 +12,9 @@ const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else cons
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'es-VE', timezoneId: 'America/Caracas', acceptDownloads: true });
   const page = await ctx.newPage();
+  // Las capturas salen sin el aviso temporal (toast) encima.
+  const capturar = page.screenshot.bind(page);
+  page.screenshot = async o => { await page.evaluate(() => { const t = document.getElementById('toast'); if (t) t.hidden = true; }); return capturar(o); };
   const errores = [];
   page.on('pageerror', e => errores.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error') errores.push('console: ' + m.text()); });
