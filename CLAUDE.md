@@ -14,7 +14,7 @@ de avisos, cierre de semana con versiones y motivo, copia de seguridad.
 
 Lógica en `app/js/`: `horas.js` (cálculo puro), `acciones.js` (cambios), `servicios.js` (consultas),
 `vistas.js` (pantallas), `pdf.js`. Pruebas: `node --test pruebas/*.test.js`. Prueba de punta a punta en un
-celular simulado:  (Playwright; servir  en el puerto 8780). Ver `app/LEEME.md`.
+celular simulado: `pruebas/e2e-movil.js` (Playwright; servir `app/` en el puerto 8780). Ver `app/LEEME.md`.
 
 Lee antes de tocar nada: `docs/REQUISITOS.md` (qué se pidió y qué está decidido), `docs/PLAN.md`
 (etapas) y `docs/ETAPA_1.md` (seguimiento). La maqueta de las pantallas está en
