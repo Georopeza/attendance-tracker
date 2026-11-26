@@ -210,3 +210,31 @@ test('comparaciones en palabras', () => {
   assert.equal(difTxt(-45), '45 min menos que el promedio');
   assert.equal(difTxt(22, 'lo entregado'), '22 min más que lo entregado');
 });
+
+test('marcar a otra hora: entrada olvidada, salida y regreso', () => {
+  const st = nuevo('Ana'), ana = id(st, 'Ana'); reloj(9 * 60);                 // son las 9:00 y se olvidó marcar la entrada de las 8:00
+  assert.ok(A.marcarA(st, ana, '08:00').ok);
+  assert.equal(S.tramosDelDia(st, ana, HOY)[0].entrada, 8 * 60);
+  assert.equal(S.estadoDe(S.tramosDelDia(st, ana, HOY)), 'presente');
+  assert.match(A.marcarA(st, ana, '07:00').error, /anterior a la entrada/);     // la salida no puede ser antes de la entrada
+  assert.match(A.marcarA(st, ana, '09:30').error, /todavía no ha llegado/);     // ni una hora futura
+  assert.ok(A.marcarA(st, ana, '08:45').ok);                                    // salida a las 8:45
+  assert.equal(S.tramosDelDia(st, ana, HOY)[0].salida, 8 * 60 + 45);
+  assert.match(A.marcarA(st, ana, '08:30').error, /cruza/);                     // regreso dentro del tramo anterior
+  assert.ok(A.marcarA(st, ana, '08:50').ok);                                    // regreso a las 8:50
+  assert.equal(S.tramosDelDia(st, ana, HOY).length, 2);
+  assert.match(A.marcarA(st, ana, '').error, /hora/);
+});
+
+test('cambiar la hora exacta de la última marca', () => {
+  const st = nuevo('Ana'), ana = id(st, 'Ana'); reloj(9 * 60);
+  assert.match(A.cambiarUltimaMarca(st, ana, '08:00').error, /No hay marcas/);
+  A.marcar(st, ana);                                                            // entró a las 9:00 (tarde)
+  assert.ok(A.cambiarUltimaMarca(st, ana, '08:00').ok);                         // en realidad llegó a las 8:00
+  assert.equal(S.tramosDelDia(st, ana, HOY)[0].entrada, 8 * 60);
+  reloj(12 * 60); A.marcar(st, ana);
+  assert.ok(A.cambiarUltimaMarca(st, ana, '11:40').ok);
+  assert.equal(S.tramosDelDia(st, ana, HOY)[0].salida, 11 * 60 + 40);
+  assert.match(A.cambiarUltimaMarca(st, ana, '07:00').error, /anterior a la entrada/);
+  assert.match(A.cambiarUltimaMarca(st, ana, '13:00').error, /todavía no ha llegado/);
+});

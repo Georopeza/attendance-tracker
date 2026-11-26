@@ -40,8 +40,10 @@ Lee antes de tocar nada: `documentacion/REQUISITOS.md` (qué se pidió y qué es
 ## Principio de diseño: rápido y simple
 
 El uso diario es **marcar y listo**. La pantalla Hoy es la principal y debe seguir simple:
-- Tarjeta = nombre, estado y un botón grande (Entró / Salió / Volvió). Correcciones, horas y avisos van
-  escondidos en "Detalle y correcciones"; los cálculos se ven en el resumen semanal.
+- Tarjeta = nombre, estado, un botón grande (Entró / Salió / Volvió) y debajo uno pequeño para marcar a otra
+  hora ("Marcar hora de entrada / salida / regreso", para cuando se olvidó marcar en el momento; no acepta
+  horas futuras). Correcciones, horas y avisos van escondidos en "Detalle y correcciones" (incluye "Cambiar
+  hora exacta"); los cálculos se ven en el resumen semanal.
 - Dos formas de marcar, ambas disponibles: **en el momento** (un toque) y **al final del día**
   (lista con casillas y el horario del turno ya puesto, un solo guardar).
 - Menú mínimo: Hoy, Semana, Configuración. Lo que se toca poco vive en Configuración.

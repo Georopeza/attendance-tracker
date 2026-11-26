@@ -52,6 +52,19 @@ const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else cons
   await page.waitForTimeout(250); ok(await page.locator('article', { hasText: 'Carlos Díaz' }).locator('text=Sin llegar').count() === 1, 'deshacer vuelve a Sin llegar');
   await page.screenshot({ path: `${OUT}/hoy-detalle.png` });
 
+  // Marcar a otra hora (entrada olvidada)
+  await carlos.locator('button', { hasText: 'Marcar hora de entrada' }).click();
+  await page.fill('dialog input[type=time]', '14:00');
+  await page.click('dialog >> text=Marcar');
+  await page.waitForTimeout(250); ok(await page.locator('article', { hasText: 'Carlos Díaz' }).locator('text=Presente desde 14:00').count() === 1, 'marcar la hora de entrada a otra hora (14:00)');
+  await page.locator('article', { hasText: 'Carlos Díaz' }).locator('button', { hasText: 'Marcar hora de salida' }).click();
+  await page.fill('dialog input[type=time]', '15:45');
+  await page.click('dialog >> text=Marcar');
+  await page.waitForTimeout(250); ok(await page.locator('#toast').textContent().then(t => /todavía no ha llegado/.test(t)), 'no acepta una hora futura (son las 15:30)');
+  const detalle = page.locator('article', { hasText: 'Carlos Díaz' }).locator('details');
+  if (!(await detalle.evaluate(d => d.open))) await detalle.locator('summary').click();
+  await page.locator('article', { hasText: 'Carlos Díaz' }).locator('button', { hasText: 'Deshacer' }).click();
+  await page.waitForTimeout(250); ok(await page.locator('article', { hasText: 'Carlos Díaz' }).locator('text=Sin llegar').count() === 1, 'se deshace la marca manual');
   // Bloque
   await page.click('text=Todos los que faltan entraron');
   await page.waitForTimeout(250); ok(await page.locator('text=Sin llegar').count() === 0, 'todos entraron en bloque');

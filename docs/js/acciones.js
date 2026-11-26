@@ -27,15 +27,27 @@ export function validarTramos(lista) {
 }
 
 // ---------- marcar ----------
-export function marcar(st, empId) {
+/** Marca a la hora actual: si está dentro, la salida; si no, una entrada nueva. */
+export function marcar(st, empId) { return marcarEn(st, empId, ahora().min); }
+
+/** Igual que `marcar`, pero a la hora que se indique ('HH:MM'): para cuando se olvidó marcar en el momento.
+ *  No acepta horas que todavía no han llegado. */
+export function marcarA(st, empId, hora) {
+  if (!hora) return err('Escribe la hora.');
+  const min = aMin(hora);
+  if (min > ahora().min) return err('Esa hora todavía no ha llegado.');
+  return marcarEn(st, empId, min);
+}
+
+function marcarEn(st, empId, min) {
   const a = ahora(), tramos = tramosDelDia(st, empId, a.fecha), ultimo = tramos[tramos.length - 1];
   if (ultimo && ultimo.salida == null) {
-    const e = validarTramos(tramos.map(t => (t === ultimo ? { ...t, salida: a.min } : t)));
+    const e = validarTramos(tramos.map(t => (t === ultimo ? { ...t, salida: min } : t)));
     if (e) return err(e);
-    ultimo.salida = a.min;
+    ultimo.salida = min;
     return ok();
   }
-  const nuevo = { id: nuevoId(st), empId, fecha: a.fecha, entrada: a.min, salida: null };
+  const nuevo = { id: nuevoId(st), empId, fecha: a.fecha, entrada: min, salida: null };
   const e = validarTramos([...tramos, nuevo]);
   if (e) return err(e);
   st.tramos.push(nuevo);
@@ -47,6 +59,21 @@ export function ajustar(st, empId, sentido) {
   if (!ultimo) return ok();
   const paso = sentido === 'mas' ? 15 : -15, copia = { ...ultimo };
   if (ultimo.salida != null) copia.salida += paso; else copia.entrada += paso;
+  const e = validarTramos(tramos.map(t => (t === ultimo ? copia : t)));
+  if (e) return err(e);
+  Object.assign(ultimo, copia);
+  return ok();
+}
+
+/** Cambia la hora exacta de la última marca de hoy (la salida si ya salió; si no, la entrada). */
+export function cambiarUltimaMarca(st, empId, hora) {
+  const a = ahora(), tramos = tramosDelDia(st, empId, a.fecha), ultimo = tramos[tramos.length - 1];
+  if (!ultimo) return err('No hay marcas hoy.');
+  if (!hora) return err('Escribe la hora.');
+  const min = aMin(hora);
+  if (min > a.min) return err('Esa hora todavía no ha llegado.');
+  const copia = { ...ultimo };
+  if (ultimo.salida != null) copia.salida = min; else copia.entrada = min;
   const e = validarTramos(tramos.map(t => (t === ultimo ? copia : t)));
   if (e) return err(e);
   Object.assign(ultimo, copia);

@@ -29,15 +29,17 @@ function tarjetaEmpleado(st, ui, emp, fecha, esHoy) {
   const btn = !esHoy ? '' : estado === 'presente'
     ? `<button data-a="marcar" data-id="${emp.id}" class="min-h-[56px] w-full rounded-xl border-2 border-slate-400 text-lg font-semibold">Salió</button>`
     : `<button data-a="marcar" data-id="${emp.id}" class="min-h-[56px] w-full rounded-xl bg-blue-700 text-lg font-semibold text-white">${estado === 'se_fue' ? 'Volvió' : 'Entró'}</button>`;
+  // Para cuando se olvidó marcar en el momento: se escribe la hora real.
+  const otraHora = !esHoy ? '' : `<button data-a="marcar-hora" data-id="${emp.id}" class="min-h-[44px] w-full rounded-xl border border-slate-300 bg-white text-sm font-medium text-slate-700">${estado === 'presente' ? 'Marcar hora de salida' : estado === 'se_fue' ? 'Marcar hora de regreso' : 'Marcar hora de entrada'}</button>`;
   const tr = tramos.map(t => `<span class="rounded bg-slate-100 px-2 py-0.5">${deMin(t.entrada)} – ${t.salida != null ? deMin(t.salida) : 'en curso'}</span>`).join('') || '<span class="text-slate-500">Sin marcas</span>';
   return `<article class="space-y-3 rounded-2xl border border-l-4 border-slate-200 ${borde} bg-white p-4">
     <div class="flex items-baseline justify-between gap-2"><strong class="text-lg">${esc(emp.nombre)}</strong><span class="text-sm ${colorTxt}">${texto}</span></div>
-    ${err ? `<p class="text-sm text-red-700">${esc(err)}</p>` : ''}${btn}
+    ${err ? `<p class="text-sm text-red-700">${esc(err)}</p>` : ''}${btn}${otraHora}
     <details data-det="${emp.id}" ${ui.abiertos.has(emp.id) ? 'open' : ''} class="text-sm">
       <summary class="flex min-h-[44px] cursor-pointer select-none items-center text-slate-500">Detalle y correcciones</summary>
       <div class="space-y-3 pb-1">
         <div class="flex flex-wrap gap-1">${tr}</div>
-        ${esHoy && tramos.length ? `<div class="flex flex-wrap gap-2">${boton('−15 min', `data-a="ajustar" data-id="${emp.id}" data-s="menos"`)}${boton('+15 min', `data-a="ajustar" data-id="${emp.id}" data-s="mas"`)}${boton('Deshacer', `data-a="deshacer" data-id="${emp.id}"`)}</div>` : ''}
+        ${esHoy && tramos.length ? `<div class="flex flex-wrap gap-2">${boton('−15 min', `data-a="ajustar" data-id="${emp.id}" data-s="menos"`)}${boton('+15 min', `data-a="ajustar" data-id="${emp.id}" data-s="mas"`)}${boton('Cambiar hora exacta', `data-a="cambiar-ultima" data-id="${emp.id}"`)}${boton('Deshacer', `data-a="deshacer" data-id="${emp.id}"`)}</div>` : ''}
         <div class="grid grid-cols-3 border-t border-slate-200 pt-2">
           <div><span class="text-slate-500">Normales</span><b class="block text-sm text-teal-700">${hTxt(r.normales)}</b></div>
           <div><span class="text-slate-500">Extra</span><b class="block text-sm text-blue-700">${hTxt(r.extraTurno)}${r.extraSinTurno ? `<span class="text-violet-700"> +${hTxt(r.extraSinTurno)}</span>` : ''}</b></div>
@@ -328,6 +330,28 @@ export const acciones = {
   hoy: ({ ui }) => { ui.fecha = null; return false; },
   marcar: ({ st, d, ui }) => { const r = A.marcar(st, Number(d.id)); if (r.error) { ui.errores[d.id] = r.error; } else delete ui.errores[d.id]; return true; },
   ajustar: ({ st, d, ui }) => { ui.abiertos.add(Number(d.id)); const r = A.ajustar(st, Number(d.id), d.s); if (r.error) ui.errores[d.id] = r.error; else delete ui.errores[d.id]; return true; },
+  'marcar-hora': async ({ st, d, ui }) => {
+    const id = Number(d.id), emp = S.empleado(st, id), estado = S.estadoDe(S.tramosDelDia(st, id, ahora().fecha));
+    const que = estado === 'presente' ? 'salida' : estado === 'se_fue' ? 'regreso' : 'entrada';
+    const v = await formulario({ titulo: `Hora de ${que} de ${emp.nombre}`, mensaje: 'Escribe la hora real a la que ocurrió, si no la marcaste en el momento.',
+      campos: [{ n: 'hora', t: 'time', l: `Hora de ${que}`, v: deMin(ahora().min) }], boton: 'Marcar' });
+    if (!v) return false;
+    const r = A.marcarA(st, id, v.hora);
+    if (r.error) { ui.errores[id] = r.error; toast(r.error, 'error'); } else { delete ui.errores[id]; toast(`Marcada a las ${v.hora}.`); }
+    return true;
+  },
+  'cambiar-ultima': async ({ st, d, ui }) => {
+    const id = Number(d.id), emp = S.empleado(st, id), tr = S.tramosDelDia(st, id, ahora().fecha), u = tr[tr.length - 1];
+    if (!u) return false;
+    ui.abiertos.add(id);
+    const cerrado = u.salida != null;
+    const v = await formulario({ titulo: `Cambiar la hora de ${cerrado ? 'salida' : 'entrada'} de ${emp.nombre}`, mensaje: 'Escribe la hora exacta correcta.',
+      campos: [{ n: 'hora', t: 'time', l: `Hora de ${cerrado ? 'salida' : 'entrada'}`, v: deMin(cerrado ? u.salida : u.entrada) }], boton: 'Cambiar' });
+    if (!v) return false;
+    const r = A.cambiarUltimaMarca(st, id, v.hora);
+    if (r.error) { ui.errores[id] = r.error; toast(r.error, 'error'); } else { delete ui.errores[id]; toast('Hora cambiada.'); }
+    return true;
+  },
   deshacer: ({ st, d, ui }) => { ui.abiertos.add(Number(d.id)); A.deshacer(st, Number(d.id)); return true; },
   bloque: ({ st, d }) => { const r = A.bloque(st, d.q); toast(r.hechos ? `${r.hechos} marcas a las ${r.hora}.${r.omitidos ? ` ${r.omitidos} omitidas.` : ''}` : 'No había a quién marcar.'); return true; },
   // Solo marca o desmarca casillas en pantalla: no hay que guardar ni volver a dibujar (se perderían).
