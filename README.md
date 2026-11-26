@@ -38,3 +38,8 @@ cd docs && python3 -m http.server 8780   # servir la app; luego: node pruebas/e2
 frontend/construir.sh                    # recompilar estilos tras cambiar clases
 ```
 Al cambiar archivos de la app, sube la `VERSION` de `docs/sw.js` para que los teléfonos se actualicen.
+
+## Licencia
+[MIT](LICENSE): puedes usar, copiar, modificar y compartir este software, también en tu negocio, siempre que
+conserves el aviso de la licencia. Se ofrece "tal cual", sin garantías. Las bibliotecas incluidas en
+`docs/vendor/` (jsPDF y jsPDF-AutoTable) también son MIT; ver `docs/vendor/LICENCIAS.txt`.
