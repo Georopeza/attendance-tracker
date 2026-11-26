@@ -1,4 +1,4 @@
-# Control de Asistencia
+# Control de Asistencia (attendance-tracker)
 
 Aplicación para el celular que lleva la **asistencia y las horas** de un equipo, y genera un **PDF semanal**
 con la entrada, la salida y el total de cada persona. Pensada para que **una sola persona** la use de forma

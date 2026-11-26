@@ -1,6 +1,5 @@
 // Almacenamiento: todo vive en el teléfono (localStorage), en una sola clave.
 const CLAVE = 'asistencia:v1';
-const CLAVE_ANTIGUA = 'sala-tricolor:v1';
 
 export function estadoInicial() {
   return {
@@ -26,7 +25,7 @@ export function conPorDefecto(d) {
 
 export function cargar() {
   try {
-    const crudo = localStorage.getItem(CLAVE) || localStorage.getItem(CLAVE_ANTIGUA);
+    const crudo = localStorage.getItem(CLAVE);
     if (crudo) return conPorDefecto(JSON.parse(crudo));
   } catch (e) { /* sin almacenamiento: se arranca vacío */ }
   return estadoInicial();

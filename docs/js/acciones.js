@@ -248,7 +248,7 @@ export const exportarCopia = st => JSON.stringify({ app: 'control-asistencia', e
 export function importarCopia(texto) {
   let o;
   try { o = JSON.parse(texto); } catch (e) { return err('El archivo no es una copia válida.'); }
-  const d = o && (o.app === 'control-asistencia' || o.app === 'sala-tricolor') ? o.datos : null;
+  const d = o && o.app === 'control-asistencia' ? o.datos : null;
   if (!d || d.v !== 1 || !Array.isArray(d.empleados) || !Array.isArray(d.tramos) || !Array.isArray(d.turnos)) return err('El archivo no es una copia de esta aplicación.');
   return ok({ datos: conPorDefecto(d) });
 }

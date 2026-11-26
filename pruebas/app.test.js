@@ -183,8 +183,8 @@ test('"ahora" usa la zona elegida y no una fija', () => {
   assert.notEqual(t.min, h.min);                                // 19 horas de diferencia entre ambas zonas
 });
 
-test('copias antiguas y datos incompletos se completan al importar', () => {
-  const viejo = JSON.stringify({ app: 'sala-tricolor', datos: { v: 1, empleados: [], tramos: [], turnos: [] } });
+test('datos incompletos (de versiones anteriores) se completan al importar', () => {
+  const viejo = JSON.stringify({ app: 'control-asistencia', datos: { v: 1, empleados: [], tramos: [], turnos: [] } });
   const r = A.importarCopia(viejo);
   assert.ok(r.ok); assert.deepEqual(r.datos.ajustes, { organizacion: '', zona: '' }); assert.ok(Array.isArray(r.datos.excepciones));
 });
