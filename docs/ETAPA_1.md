@@ -29,7 +29,8 @@ verlo en tiempo real y dejar todo en bitácora.
 ## Por hacer
 
 - [ ] Despliegue en la nube con HTTPS (falta decidir hosting, dominio y usuario inicial).
-- [ ] Revisión visual en celular y ajuste fino del diseño (Tailwind por CDN todavía).
+- [x] Estilos compilados y servidos desde el propio sitio (`frontend/construir.sh`), sin CDN.
+- [ ] Revisión del diseño por la coordinación y ajustes.
 - [ ] Prueba de dos coordinadores a la vez en dispositivos reales.
 
 ## Criterios de aceptación

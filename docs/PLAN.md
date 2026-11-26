@@ -25,9 +25,19 @@ Los totales del día nunca se guardan: se calculan desde los tramos, así una co
 - [ ] Etapa 2.
 - [ ] Etapa 3.
 
+## Hosting gratuito (propuesta, por confirmar)
+
+- Supabase es una base de datos PostgreSQL en la nube (no ejecuta Django). Sirve como **base de datos**
+  gratuita (500 MB; se pausa si pasa una semana sin actividad; sin copias automáticas en el plan gratis).
+- La aplicación Django necesita además un servicio gratuito donde correr: Render (se "duerme" tras
+  15 min sin uso y tarda cerca de un minuto en despertar). La base de datos gratuita de Render expira a los
+  30 días, por eso se usa Supabase (o Neon) en su lugar.
+- Conexión: `DATABASE_URL` apuntando al "session pooler" de Supabase (Render gratis solo tiene IPv4).
+- Copias de seguridad: hay que exportar la base periódicamente (tarea pendiente).
+
 ## Pendientes de infraestructura
 
-1. Hosting (propuesta: Render o Railway).
+1. Confirmar hosting (propuesta anterior: Render + Supabase, ambos gratuitos).
 2. Usuario inicial del coordinador.
-3. Dominio propio o el del hosting.
+3. Dominio propio o el del hosting (el gratuito es del tipo `nombre.onrender.com`).
 4. Desarrollo en la rama `ccr-7cfa70cc-z8j2vu`, sin tocar la principal.

@@ -1,12 +1,12 @@
-<!doctype html>
+{% load static %}<!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block titulo %}Sala Tricolor{% endblock %}</title>
-  {# Tailwind y HTMX por CDN mientras se arma el diseño; en producción se compilan y se sirven desde el sitio. #}
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  {# Estilos (Tailwind compilado con frontend/construir.sh) y HTMX se sirven desde el propio sitio. #}
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script src="{% static 'js/htmx.min.js' %}" defer></script>
 </head>
 <body class="bg-slate-50 text-slate-900" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
   <header class="bg-white border-b">
