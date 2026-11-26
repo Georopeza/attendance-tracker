@@ -1,7 +1,20 @@
 # Sala Tricolor: contexto para sesiones de desarrollo
 
-Sistema de control de asistencia y horas para una coordinación (6 empleados, varios coordinadores).
+Sistema de control de asistencia y horas (6 empleados, **una sola persona lo usa, desde el celular**).
 **No maneja pagos**: solo horas, que se entregan a un ente superior.
+
+## Estado actual (importante)
+
+La aplicación vigente es la **PWA del celular en `app/`** (JavaScript sin servidor; datos en el teléfono;
+sin internet; PDF generado en el teléfono). El proyecto Django de la raíz (`asistencia/`, `turnos/`, etc.)
+fue la primera versión (computador/nube) y queda **solo como referencia**; no se sigue desarrollando.
+Decisiones del coordinador: un solo usuario, sin coordinadores ni bitácora, sin nube, móvil (Android y
+iPhone), reporte en PDF (Excel descartado por ahora). Se mantiene: disponibilidad, sugerencia con registro
+de avisos, cierre de semana con versiones y motivo, copia de seguridad.
+
+Lógica en `app/js/`: `horas.js` (cálculo puro), `acciones.js` (cambios), `servicios.js` (consultas),
+`vistas.js` (pantallas), `pdf.js`. Pruebas: `node --test pruebas/*.test.js`. Prueba de punta a punta en un
+celular simulado:  (Playwright; servir  en el puerto 8780). Ver `app/LEEME.md`.
 
 Lee antes de tocar nada: `docs/REQUISITOS.md` (qué se pidió y qué está decidido), `docs/PLAN.md`
 (etapas) y `docs/ETAPA_1.md` (seguimiento). La maqueta de las pantallas está en
@@ -33,6 +46,9 @@ El uso diario es **marcar y listo**. La pantalla Hoy es la principal y debe segu
 - No agregar elementos a la tarjeta ni al menú principal sin pedirlo.
 
 ## Comandos
+
+PWA: `node --test pruebas/*.test.js` y `frontend/construir-app.sh` (estilos).
+Versión Django (referencia):
 
 ```bash
 python manage.py migrate

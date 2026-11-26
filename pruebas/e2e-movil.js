@@ -1,0 +1,153 @@
+// Prueba de punta a punta en un celular simulado (Playwright). Antes: cd app && python3 -m http.server 8780
+// Uso: node pruebas/e2e-movil.js   (requiere: npm i playwright)
+const { chromium, devices } = require('playwright');
+const fs = require('fs');
+const OUT = require('os').tmpdir() + '/sala-tricolor-e2e';
+fs.mkdirSync(OUT, { recursive: true });
+const BASE = 'http://127.0.0.1:8780/';
+let fallos = 0;
+const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok   ', m); };
+
+(async () => {
+  const browser = await chromium.launch();
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'es-VE', acceptDownloads: true });
+  const page = await ctx.newPage();
+  const errores = [];
+  page.on('pageerror', e => errores.push('pageerror: ' + e.message));
+  page.on('console', m => { if (m.type() === 'error') errores.push('console: ' + m.text()); });
+  await page.clock.setFixedTime(new Date('2026-11-26T19:30:00Z')); // jueves 15:30 en Venezuela
+  await page.goto(BASE);
+  await page.waitForSelector('main');
+
+  await page.waitForTimeout(250); ok(await page.locator('text=Todavía no hay empleados').count() === 1, 'estado vacío al empezar');
+  await page.screenshot({ path: `${OUT}/vacio.png` });
+
+  // Datos de ejemplo
+  await page.click('nav >> text=Más');
+  await page.click('text=Cargar datos de ejemplo');
+  await page.click('dialog >> text=Sí, cargar');
+  await page.waitForSelector('#toast:not([hidden])');
+  await page.click('nav >> text=Hoy');
+  await page.waitForTimeout(250); ok(await page.locator('article').count() === 6, 'seis tarjetas de empleados');
+
+  // Marcar en el momento
+  const carlos = page.locator('article', { hasText: 'Carlos Díaz' });
+  await carlos.locator('button', { hasText: 'Entró' }).click();
+  await page.waitForTimeout(250); ok(await carlos.locator('text=Presente desde 15:30').count() === 1, 'Entró marca la hora actual de Venezuela (15:30)');
+  await page.waitForTimeout(250); ok(await carlos.locator('button', { hasText: 'Salió' }).count() === 1, 'el botón cambia a Salió');
+  await page.screenshot({ path: `${OUT}/hoy-momento.png` });
+  await carlos.locator('summary').click();
+  await carlos.locator('button', { hasText: 'Deshacer' }).click();
+  await page.waitForTimeout(250); ok(await page.locator('article', { hasText: 'Carlos Díaz' }).locator('text=Sin llegar').count() === 1, 'deshacer vuelve a Sin llegar');
+  await page.screenshot({ path: `${OUT}/hoy-detalle.png` });
+
+  // Bloque
+  await page.click('text=Todos los que faltan entraron');
+  await page.waitForTimeout(250); ok(await page.locator('text=Sin llegar').count() === 0, 'todos entraron en bloque');
+
+  // Al final del día
+  await page.click('button:has-text("Al final del día")');
+  await page.waitForTimeout(250); ok(await page.locator('input[type=checkbox][name^="vino-"]').count() === 6, 'lista con casillas para los 6');
+  await page.screenshot({ path: `${OUT}/hoy-dia.png` });
+  await page.click('text=Nadie');
+  await page.click('text=Guardar el día');
+  await page.waitForTimeout(200);
+  await page.click('button:has-text("En el momento")');
+  await page.waitForTimeout(250); ok(await page.locator('text=Sin llegar').count() === 6, 'guardar con Nadie deja a todos sin asistencia');
+
+  // Día anterior en la lista final: horas del turno ya puestas
+  await page.click('button:has-text("Al final del día")');
+  await page.click('[aria-label="Día anterior"]');
+  await page.waitForTimeout(250); ok(await page.locator('input[name^="entrada-"]').first().inputValue() !== '', 'horario del turno precargado en un día anterior');
+  await page.click('text=Todos vinieron');
+  await page.click('text=Guardar el día');
+  ok((await page.locator('#toast').textContent()).includes('Día guardado'), 'guardar un día pasado');
+  await page.click('text=Ir a hoy');
+
+  // Semana anterior, desglose y PDF
+  await page.click('nav >> text=Semana');
+  await page.click('[aria-label="Semana anterior"]');
+  await page.waitForTimeout(250); ok(await page.locator('text=Total del equipo').count() === 1, 'resumen semanal');
+  const luis = page.locator('article', { hasText: 'Luis Mora' });
+  await page.waitForTimeout(250); ok(await luis.locator('text=39:38').count() === 1, 'Luis suma 39:38 en la semana anterior');
+  await page.waitForTimeout(250); ok(await luis.locator('text=1 por revisar').count() === 1, 'Luis tiene un día por revisar');
+  await page.screenshot({ path: `${OUT}/semana.png`, fullPage: false });
+  await luis.locator('text=Ver semana día por día').click();
+  await page.waitForTimeout(250); ok(await page.locator('text=Suma de los días').count() === 1, 'desglose por día');
+  await page.waitForTimeout(250); ok(await page.locator('text=39:38').count() >= 1, 'la suma del desglose es 39:38');
+  await page.screenshot({ path: `${OUT}/desglose.png`, fullPage: true });
+  await page.goBack();
+  const [descarga] = await Promise.all([page.waitForEvent('download'), page.click('text=Descargar PDF')]);
+  const ruta = `${OUT}/semana.pdf`; await descarga.saveAs(ruta);
+  const pdf = fs.readFileSync(ruta);
+  ok(pdf.slice(0, 5).toString() === '%PDF-' && pdf.length > 3000, `PDF generado (${pdf.length} bytes) con nombre ${descarga.suggestedFilename()}`);
+
+  // Cerrar semana, corregir y ver la diferencia
+  await page.click('text=Cerrar semana');
+  await page.click('dialog >> text=Cerrar semana');
+  await page.waitForTimeout(250); ok(await page.locator('text=Semana entregada').count() === 1, 'semana cerrada');
+  await page.locator('article', { hasText: 'Luis Mora' }).locator('text=Ver semana día por día').click();
+  await page.locator('a:has-text("Corregir")').nth(1).click();   // martes 17
+  await page.fill('input[name^="salida-"]', '17:10');
+  await page.waitForTimeout(250); ok(await page.locator('input[name=motivo]').getAttribute('required') !== null, 'en semana cerrada el motivo es obligatorio');
+  await page.fill('input[name=motivo]', 'olvidó marcar la salida');
+  await page.click('text=Guardar corrección');
+  await page.waitForTimeout(300);
+  await page.goto(BASE + '#/semana');
+  await page.waitForTimeout(250); ok(await page.locator('text=+0:22').count() >= 1, 'muestra la diferencia contra lo entregado (+0:22: 8:08 se redondea a 8:00)');
+  await page.screenshot({ path: `${OUT}/semana-cerrada.png` });
+
+  // Sugerencia
+  await page.goto(BASE + '#/sugerencia');
+  await page.waitForTimeout(250); ok(await page.locator('text=¿Quién debería venir?').count() === 1, 'pantalla de sugerencia');
+  await page.locator('button:has-text("Sin avisar")').first().click();
+  await page.waitForTimeout(250); ok(await page.locator('button:has-text("Avisado")').count() === 1, 'anotar a quién se avisó');
+  await page.screenshot({ path: `${OUT}/sugerencia.png` });
+
+  // Empleados: agregar, archivar, eliminar
+  await page.goto(BASE + '#/empleados');
+  await page.click('text=Agregar empleado');
+  await page.fill('dialog input[name=nombre]', 'Pedro Prueba');
+  await page.click('dialog >> text=Agregar');
+  await page.waitForTimeout(250); ok(await page.locator('text=Pedro Prueba').count() === 1, 'empleado agregado');
+  const pedro = page.locator('div.rounded-2xl', { hasText: 'Pedro Prueba' }).first();
+  await pedro.locator('button:has-text("Eliminar")').click();
+  await page.click('dialog >> text=Sí, eliminar');
+  await page.waitForTimeout(250); ok(await page.locator('text=Pedro Prueba').count() === 0, 'empleado sin horas eliminado');
+  await page.screenshot({ path: `${OUT}/empleados.png` });
+
+  // Turnos y disponibilidad
+  await page.goto(BASE + '#/turnos');
+  await page.waitForTimeout(250); ok(await page.locator('text=Calendario semanal').count() === 1, 'pantalla de turnos');
+  await page.screenshot({ path: `${OUT}/turnos.png`, fullPage: true });
+  await page.goto(BASE + '#/disponibilidad');
+  await page.screenshot({ path: `${OUT}/disponibilidad.png`, fullPage: true });
+  await page.locator('a:has-text("María Rojas")').click();
+  await page.waitForTimeout(250); ok(await page.locator('text=09:00–12:00').count() === 1 && await page.locator('text=14:00–16:00').count() === 1, 'ficha con dos franjas el miércoles');
+  await page.screenshot({ path: `${OUT}/ficha.png`, fullPage: true });
+
+  // Persistencia y sin internet
+  await page.goto(BASE + '#/hoy');
+  await page.reload(); await page.waitForSelector('article');
+  await page.waitForTimeout(250); ok(await page.locator('article').count() === 6, 'los datos siguen después de recargar');
+  await page.waitForTimeout(800);
+  const sw = await page.evaluate(async () => { const r = await navigator.serviceWorker.getRegistration(); return !!(r && (r.active || r.installing || r.waiting)); });
+  ok(sw, 'service worker registrado');
+  await ctx.setOffline(true);
+  await page.reload(); await page.waitForSelector('article');
+  await page.waitForTimeout(250); ok(await page.locator('article').count() === 6, 'abre y funciona sin internet');
+  await ctx.setOffline(false);
+
+  // Copia de seguridad
+  await page.goto(BASE + '#/mas');
+  const [d2] = await Promise.all([page.waitForEvent('download'), page.click('text=Guardar copia y enviarla')]);
+  await d2.saveAs(`${OUT}/copia.json`);
+  const copia = JSON.parse(fs.readFileSync(`${OUT}/copia.json`, 'utf8'));
+  ok(copia.app === 'sala-tricolor' && copia.datos.empleados.length === 6, 'copia de seguridad descargable');
+  await page.screenshot({ path: `${OUT}/mas.png`, fullPage: true });
+
+  ok(errores.length === 0, 'sin errores en consola' + (errores.length ? ': ' + errores.join(' | ') : ''));
+  await browser.close();
+  console.log(fallos ? `\n${fallos} FALLOS` : '\nTODO BIEN');
+  process.exit(fallos ? 1 : 0);
+})().catch(e => { console.error(e); process.exit(2); });

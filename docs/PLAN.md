@@ -25,7 +25,15 @@ Los totales del día nunca se guardan: se calculan desde los tramos, así una co
 - [ ] Etapa 2.
 - [ ] Etapa 3.
 
-## Decisión: uso local (reemplaza al hosting en la nube)
+## Decisión final: app para el celular (reemplaza a lo anterior)
+
+Un solo usuario, desde el celular (Android y iPhone), sin computador. Se construyó una **PWA** en `app/`:
+datos en el teléfono, sin internet, reporte semanal en PDF para compartir, copia de seguridad en archivo.
+Se descartaron coordinadores, bitácora y Excel. Pendiente: publicar la carpeta `app/` en un hosting
+estático con HTTPS para poder instalarla (el repositorio es privado, así que GitHub Pages gratis no sirve
+salvo que se haga público; alternativas: Cloudflare Pages o Netlify).
+
+## Decisión previa: uso local (reemplazada por la app del celular)
 
 El sistema se usará **en un computador local**, sin nube ni hosting. El coordinador comparte la
 información exportando el resumen semanal a **Excel y PDF** (con entradas, salidas y totales por persona)

@@ -1,0 +1,3 @@
+Bibliotecas incluidas (copias sin modificar, licencia MIT):
+- jsPDF 2.5.2 (https://github.com/parallax/jsPDF)
+- jsPDF-AutoTable 3.8.4 (https://github.com/simonbengtsson/jsPDF-AutoTable)

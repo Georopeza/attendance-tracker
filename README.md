@@ -1,5 +1,8 @@
 # Sala Tricolor
 
+> **Versión vigente: app para el celular en [`app/`](app/LEEME.md)** (funciona sin internet, datos en el teléfono, PDF semanal).
+> El proyecto Django de este repositorio es la primera versión y queda como referencia.
+
 Control de asistencia y horas para la coordinación. No maneja pagos: solo horas.
 
 > **Estado: etapa 1 implementada** (ver `docs/ETAPA_1.md`). Falta el despliegue en la nube, el
