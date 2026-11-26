@@ -236,12 +236,25 @@ export function cerrarSemana(st, lunes) {
 }
 
 // ---------- ajustes ----------
-export function guardarAjustes(st, { organizacion, zona }) {
+export function guardarAjustes(st, { organizacion, descripcion, zona }) {
   zona = (zona || '').trim();
   if (zona && !zonaValida(zona)) return err('La zona horaria no es válida.');
-  st.ajustes = { organizacion: (organizacion || '').trim().slice(0, 60), zona };
+  st.ajustes = { ...st.ajustes, organizacion: (organizacion || '').trim().slice(0, 60), descripcion: (descripcion || '').trim().slice(0, 100), zona };
   return ok();
 }
+
+/** Primer paso: nombre, para qué se usa y las primeras personas (una por línea, o separadas por comas). */
+export function configuracionInicial(st, { organizacion, descripcion, personas }) {
+  const r = guardarAjustes(st, { organizacion, descripcion, zona: st.ajustes.zona });
+  if (r.error) return r;
+  let agregadas = 0, repetidas = 0;
+  for (const nombre of String(personas || '').split(/[\n,;]+/).map(x => x.trim()).filter(Boolean)) {
+    if (A_agregar(st, nombre)) agregadas++; else repetidas++;
+  }
+  st.ajustes.bienvenida = true;
+  return ok({ agregadas, repetidas });
+}
+const A_agregar = (st, nombre) => !!agregarEmpleado(st, nombre).ok;
 
 // ---------- copia de seguridad ----------
 export const exportarCopia = st => JSON.stringify({ app: 'control-asistencia', exportado: new Date().toISOString(), datos: st });

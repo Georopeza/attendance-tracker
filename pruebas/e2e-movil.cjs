@@ -22,7 +22,14 @@ const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else cons
   await page.goto(BASE);
   await page.waitForSelector('main');
 
-  await page.waitForTimeout(250); ok(await page.locator('text=Todavía no hay personas').count() === 1, 'estado vacío al empezar');
+  await page.waitForTimeout(250); ok(await page.locator('text=Te damos la bienvenida').count() === 1, 'primer uso: pantalla de bienvenida');
+  await page.screenshot({ path: `${OUT}/bienvenida.png`, fullPage: true });
+  await page.fill('#b-organizacion', 'Taller San José');
+  await page.fill('#b-descripcion', 'Asistencia del personal del taller');
+  await page.fill('#b-personas', 'Ana Pérez\nLuis Mora');
+  await page.click('text=Empezar');
+  await page.waitForTimeout(250); ok(await page.locator('article').count() === 2, 'la bienvenida agrega las personas escritas');
+  ok(await page.locator('header >> text=Taller San José').count() === 1 && await page.locator('header >> text=Asistencia del personal del taller').count() === 1, 'nombre y descripción aparecen arriba');
   await page.screenshot({ path: `${OUT}/vacio.png` });
 
   // Datos de ejemplo

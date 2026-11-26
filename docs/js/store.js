@@ -13,7 +13,8 @@ export function estadoInicial() {
     cierres: [],          // { semana, version, fecha, filas:[{empId, nombre, dias, normales, extra, sinTurno, total}] }
     correcciones: [],     // { fecha, empId, motivo, cuando }  cambios hechos en semanas ya cerradas
     ultimaCopia: null,    // fecha de la última copia de seguridad
-    ajustes: { organizacion: '', zona: '' },  // nombre que aparece en la app y el PDF; zona horaria ('' = la del teléfono)
+    // organizacion y descripcion: salen en la app y el PDF. zona: '' = la del teléfono. bienvenida: ya se mostró el primer paso.
+    ajustes: { organizacion: '', descripcion: '', zona: '', bienvenida: false },
   };
 }
 

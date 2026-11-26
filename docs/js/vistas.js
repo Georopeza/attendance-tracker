@@ -65,7 +65,28 @@ function filaDia(st, ui, emp, fecha, ini, fin) {
     ${err ? `<p class="pl-10 text-sm text-red-700">${esc(err)}</p>` : ''}</div>`;
 }
 
+// ================= BIENVENIDA (primer uso) =================
+const campoTexto = (n, etiqueta, ph, valor = '', ayuda = '') => `<div><label for="b-${n}" class="mb-1 block text-sm font-medium text-slate-700">${etiqueta}</label>
+  <input id="b-${n}" name="${n}" value="${esc(valor)}" maxlength="100" placeholder="${esc(ph)}" autocomplete="off" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base">${ayuda ? `<p class="mt-1 text-xs text-slate-500">${ayuda}</p>` : ''}</div>`;
+
+function vistaBienvenida({ st }) {
+  const a = ahora();
+  return `<div class="mb-5"><h1 class="text-2xl font-bold tracking-tight">Te damos la bienvenida</h1>
+    <p class="mt-1 text-slate-600">Un par de datos para dejar la app lista. Todo es opcional y se puede cambiar después en <b>Más → Ajustes</b>.</p></div>
+    <form data-f="bienvenida" class="space-y-4">
+      ${tarjeta(`<div class="space-y-4">
+        ${campoTexto('organizacion', 'Nombre de tu grupo o negocio', 'Ej.: Taller San José', st.ajustes.organizacion, 'Aparece arriba en la app y en el PDF.')}
+        ${campoTexto('descripcion', '¿Para qué lo vas a usar?', 'Ej.: Asistencia del personal del taller', st.ajustes.descripcion, 'Una frase corta. También sale en el PDF.')}</div>`)}
+      ${tarjeta(`<label for="b-personas" class="mb-1 block text-sm font-medium text-slate-700">Personas a las que les llevarás la asistencia</label>
+        <textarea id="b-personas" name="personas" rows="5" placeholder="Una por línea&#10;Ana Pérez&#10;Luis Mora" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base"></textarea>
+        <p class="mt-1 text-xs text-slate-500">Puedes agregar más después, en Más → Personas.</p>`)}
+      <p class="text-sm text-slate-500">Hora detectada: <b>${deMin(a.min)}</b> (${esc(zonaActiva())}). Se puede cambiar en Ajustes.</p>
+      <button class="min-h-[56px] w-full rounded-xl bg-blue-700 text-lg font-semibold text-white">Empezar</button>
+      <button type="button" data-a="omitir-bienvenida" class="min-h-[48px] w-full rounded-xl text-sm font-medium text-slate-600 underline">Omitir por ahora</button></form>`;
+}
+
 function vistaHoy({ st, ui }) {
+  if (!st.ajustes.bienvenida && !st.empleados.length && !st.tramos.length) return vistaBienvenida({ st });
   const a = ahora(), fecha = ui.fecha || a.fecha, esHoy = fecha === a.fecha, activos = S.empleadosActivos(st);
   const turnos = S.turnosDelDia(st, fecha), [ini, fin] = S.horarioDelDia(st, fecha);
   const diasSinCopia = st.ultimaCopia ? Math.round((new Date(a.fecha) - new Date(st.ultimaCopia)) / 864e5) : null;
@@ -279,7 +300,9 @@ function vistaAjustes({ st }) {
     <form data-f="ajustes" class="space-y-4">
       ${tarjeta(`<label class="mb-1 block text-sm text-slate-600" for="aj-org">Nombre (opcional)</label>
         <input id="aj-org" name="organizacion" value="${esc(st.ajustes.organizacion)}" maxlength="60" placeholder="Ej.: Mi grupo, Escuela, Taller…" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base" autocomplete="off">
-        <p class="mt-1 text-xs text-slate-500">Aparece arriba en la app y en el encabezado del PDF.</p>`)}
+        <p class="mt-1 text-xs text-slate-500">Aparece arriba en la app y en el encabezado del PDF.</p>
+        <label class="mb-1 mt-4 block text-sm text-slate-600" for="aj-desc">¿Para qué lo usas? (opcional)</label>
+        <input id="aj-desc" name="descripcion" value="${esc(st.ajustes.descripcion)}" maxlength="100" placeholder="Ej.: Asistencia del personal del taller" class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base" autocomplete="off">`)}
       ${tarjeta(`<label class="mb-1 block text-sm text-slate-600" for="aj-zona">Zona horaria</label>
         <select id="aj-zona" name="zona" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base">${opciones.map(([v, l]) => `<option value="${esc(v)}" ${v === actual ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
         <p class="mt-2 text-sm text-slate-600">Ahora son <b>${deMin(a.min)}</b> del ${fechaLarga(a.fecha)}. Las marcas “Entró” y “Salió” usan esta hora.</p>`)}
@@ -299,6 +322,7 @@ const fallo = r => { if (r.error) { toast(r.error, 'error'); return true; } retu
 const nombreDe = (st, id) => S.empleado(st, id)?.nombre || '';
 
 export const acciones = {
+  'omitir-bienvenida': ({ st }) => { st.ajustes.bienvenida = true; return true; },
   ir: (c) => { location.hash = c.d.h; return false; },
   modo: ({ d, ui }) => { ui.modo = d.m; ui.erroresDia = {}; ui.valoresDia = null; return false; },
   dia: ({ d, ui }) => { const a = ahora().fecha, f = sumarDias(ui.fecha || a, Number(d.d)); ui.fecha = f >= a ? null : f; ui.erroresDia = {}; ui.valoresDia = null; return false; },
@@ -411,8 +435,13 @@ export const acciones = {
 };
 
 export const formularios = {
+  bienvenida: ({ st, form }) => {
+    const f = new FormData(form), r = A.configuracionInicial(st, { organizacion: f.get('organizacion'), descripcion: f.get('descripcion'), personas: f.get('personas') });
+    if (r.error) { toast(r.error, 'error'); return false; }
+    toast(r.agregadas ? `Listo. ${r.agregadas} ${r.agregadas === 1 ? 'persona agregada' : 'personas agregadas'}.` : 'Listo. Agrega personas cuando quieras.'); return true;
+  },
   ajustes: ({ st, form }) => {
-    const f = new FormData(form), r = A.guardarAjustes(st, { organizacion: f.get('organizacion'), zona: f.get('zona') });
+    const f = new FormData(form), r = A.guardarAjustes(st, { organizacion: f.get('organizacion'), descripcion: f.get('descripcion'), zona: f.get('zona') });
     if (r.error) { toast(r.error, 'error'); return false; }
     fijarZona(st.ajustes.zona); toast('Ajustes guardados.'); return true;
   },

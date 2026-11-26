@@ -23,7 +23,8 @@ export function generarPdf(st, lunes) {
   const a = ahora(), generado = `${fechaCompleta(a.fecha)} ${deMin(a.min)}`;
 
   const org = (st.ajustes && st.ajustes.organizacion) || '';
-  if (org) doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(...GRIS).text(org, M, 13);
+  const desc = (st.ajustes && st.ajustes.descripcion) || '';
+  if (org || desc) doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(...GRIS).text(doc.splitTextToSize([org, desc].filter(Boolean).join(' · '), ANCHO)[0], M, 13);
   doc.setFont('helvetica', 'bold').setFontSize(18).setTextColor(...AZUL).text('Resumen semanal de horas', M, 21);
   doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(...GRIS).text(`Semana del ${fechaCompleta(lunes)} al ${fechaCompleta(domingo)} · ${turnoTxt}`, M, 27);
 

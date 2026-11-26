@@ -168,7 +168,7 @@ test('un tramo abierto de un día pasado no suma hasta cerrarse', () => {
 test('ajustes: nombre, zona válida e inválida', () => {
   const st = nuevo('Ana');
   assert.ok(A.guardarAjustes(st, { organizacion: '  Mi grupo ', zona: 'America/Bogota' }).ok);
-  assert.deepEqual(st.ajustes, { organizacion: 'Mi grupo', zona: 'America/Bogota' });
+  assert.equal(st.ajustes.organizacion, 'Mi grupo'); assert.equal(st.ajustes.zona, 'America/Bogota');
   assert.match(A.guardarAjustes(st, { organizacion: '', zona: 'Marte/Olimpo' }).error, /zona/);
   assert.equal(st.ajustes.zona, 'America/Bogota');              // lo inválido no se guardó
   assert.ok(A.guardarAjustes(st, { organizacion: '', zona: '' }).ok);   // '' = la del teléfono
@@ -186,5 +186,15 @@ test('"ahora" usa la zona elegida y no una fija', () => {
 test('datos incompletos (de versiones anteriores) se completan al importar', () => {
   const viejo = JSON.stringify({ app: 'control-asistencia', datos: { v: 1, empleados: [], tramos: [], turnos: [] } });
   const r = A.importarCopia(viejo);
-  assert.ok(r.ok); assert.deepEqual(r.datos.ajustes, { organizacion: '', zona: '' }); assert.ok(Array.isArray(r.datos.excepciones));
+  assert.ok(r.ok); assert.deepEqual(r.datos.ajustes, { organizacion: '', descripcion: '', zona: '', bienvenida: false }); assert.ok(Array.isArray(r.datos.excepciones));
+});
+
+test('primer paso: nombre, descripción y personas (una por línea, sin repetir)', () => {
+  const st = estadoInicial();
+  const r = A.configuracionInicial(st, { organizacion: ' Taller San José ', descripcion: 'Asistencia del taller', personas: 'Ana Pérez\nLuis Mora\n\n ana pérez ,  Rosa Linares' });
+  assert.ok(r.ok); assert.equal(r.agregadas, 3); assert.equal(r.repetidas, 1);
+  assert.deepEqual(st.empleados.map(e => e.nombre), ['Ana Pérez', 'Luis Mora', 'Rosa Linares']);
+  assert.equal(st.ajustes.organizacion, 'Taller San José'); assert.equal(st.ajustes.descripcion, 'Asistencia del taller');
+  assert.equal(st.ajustes.bienvenida, true);
+  assert.ok(A.configuracionInicial(estadoInicial(), { organizacion: '', descripcion: '', personas: '' }).ok);  // todo es opcional
 });

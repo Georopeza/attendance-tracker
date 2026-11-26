@@ -1,6 +1,6 @@
 // Service worker: guarda la app en el teléfono para que abra y funcione sin internet.
 // Al cambiar cualquier archivo de la app, sube el número de VERSION.
-const VERSION = 'asistencia-v3';
+const VERSION = 'asistencia-v4';
 const ARCHIVOS = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/main.js', 'js/vistas.js', 'js/acciones.js', 'js/servicios.js', 'js/horas.js', 'js/fechas.js', 'js/store.js', 'js/ui.js', 'js/pdf.js', 'js/ejemplo.js',
