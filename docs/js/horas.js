@@ -34,6 +34,18 @@ export function calcularDia(tramos, turnos) {
   return { normales, extraTurno, extraSinTurno, antesTurno, totalReal, total, porRevisar };
 }
 
+/** Duración en palabras, sin dos puntos: '7 h 38 min', '22 h', '45 min', '0 h'. */
+export function hTxt(m) {
+  m = Math.round(m);
+  if (m === 0) return '0 h';
+  const h = Math.floor(m / 60), r = m % 60;
+  return h === 0 ? `${r} min` : r ? `${h} h ${r} min` : `${h} h`;
+}
+/** Diferencia en palabras: 'igual que el promedio', '2 h 20 min más que el promedio', '45 min menos que lo entregado'. */
+export function difTxt(m, ref = 'el promedio') {
+  return m === 0 ? `igual que ${ref}` : `${hTxt(Math.abs(m))} ${m > 0 ? 'más' : 'menos'} que ${ref}`;
+}
+
 export const hhmm = m => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
 export const conSigno = m => (m < 0 ? '-' : '+') + hhmm(Math.abs(m));
 export const aMin = s => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };

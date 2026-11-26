@@ -1,11 +1,10 @@
 // Pantallas. Cada vista recibe { st, ui, p } y devuelve HTML. `acciones` y `formularios` atienden los toques y envíos.
-import { hhmm, conSigno, aMin, deMin } from './horas.js';
+import { hTxt, difTxt, aMin, deMin } from './horas.js';
 import { ahora, zonaActiva, fijarZona, DIAS, DIAS_LARGOS, diaSemana, lunesDe, sumarDias, fechaCorta, fechaCompleta, fechaLarga, rangoSemana } from './fechas.js';
 import * as S from './servicios.js';
 import * as A from './acciones.js';
 import { esc, toast, confirmar, formulario } from './ui.js';
 import { guardar, estadoInicial, pedirPersistencia } from './store.js';
-import { datosEjemplo } from './ejemplo.js';
 import { compartirPdf, descargarPdf, compartirArchivo } from './pdf.js';
 
 // ---------- átomos ----------
@@ -40,12 +39,12 @@ function tarjetaEmpleado(st, ui, emp, fecha, esHoy) {
         <div class="flex flex-wrap gap-1">${tr}</div>
         ${esHoy && tramos.length ? `<div class="flex flex-wrap gap-2">${boton('−15 min', `data-a="ajustar" data-id="${emp.id}" data-s="menos"`)}${boton('+15 min', `data-a="ajustar" data-id="${emp.id}" data-s="mas"`)}${boton('Deshacer', `data-a="deshacer" data-id="${emp.id}"`)}</div>` : ''}
         <div class="grid grid-cols-3 border-t border-slate-200 pt-2">
-          <div><span class="text-slate-500">Normales</span><b class="block text-teal-700">${hhmm(r.normales)}</b></div>
-          <div><span class="text-slate-500">Extra</span><b class="block text-blue-700">${hhmm(r.extraTurno)}${r.extraSinTurno ? `<span class="text-violet-700"> +${hhmm(r.extraSinTurno)}</span>` : ''}</b></div>
-          <div><span class="text-slate-500">Total</span><b class="block">${hhmm(r.total)}</b></div></div>
-        ${r.antesTurno ? `<p class="text-xs text-slate-500">${hhmm(r.antesTurno)} antes del turno: no cuenta.</p>` : ''}
-        ${r.porRevisar ? `<p class="rounded bg-amber-100 px-2 py-1 text-xs text-amber-800">Por revisar: ${hhmm(r.totalReal)} queda exacto</p>`
-          : r.total !== r.totalReal ? `<p class="text-xs text-slate-500">Real ${hhmm(r.totalReal)}, redondeado a ${hhmm(r.total)}</p>` : ''}
+          <div><span class="text-slate-500">Normales</span><b class="block text-sm text-teal-700">${hTxt(r.normales)}</b></div>
+          <div><span class="text-slate-500">Extra</span><b class="block text-sm text-blue-700">${hTxt(r.extraTurno)}${r.extraSinTurno ? `<span class="text-violet-700"> +${hTxt(r.extraSinTurno)}</span>` : ''}</b></div>
+          <div><span class="text-slate-500">Total</span><b class="block text-sm">${hTxt(r.total)}</b></div></div>
+        ${r.antesTurno ? `<p class="text-xs text-slate-500">${hTxt(r.antesTurno)} antes del turno: no cuenta.</p>` : ''}
+        ${r.porRevisar ? `<p class="rounded bg-amber-100 px-2 py-1 text-xs text-amber-800">Por revisar: ${hTxt(r.totalReal)} queda exacto</p>`
+          : r.total !== r.totalReal ? `<p class="text-xs text-slate-500">Real ${hTxt(r.totalReal)}, redondeado a ${hTxt(r.total)}</p>` : ''}
         <a class="inline-flex min-h-[44px] items-center font-medium text-blue-700 underline" href="#/dia/${emp.id}/${fecha}">Corregir el día completo</a>
       </div></details></article>`;
 }
@@ -119,7 +118,7 @@ function vistaDia({ st, ui, p }) {
   const empId = Number(p[1]), fecha = p[2], emp = S.empleado(st, empId);
   if (!emp) return vacio('No se encontró a la persona.');
   const tramos = S.tramosDelDia(st, empId, fecha), cerrada = !!S.ultimoCierre(st, lunesDe(fecha)), r = S.resumenDia(st, empId, fecha, tramos);
-  return `${volver(ui.volver || '#/hoy', 'Volver')}${titulo(`Corregir a ${esc(emp.nombre)}`, `${fechaLarga(fecha)} · total actual ${hhmm(r.total)}`)}
+  return `${volver(ui.volver || '#/hoy', 'Volver')}${titulo(`Corregir a ${esc(emp.nombre)}`, `${fechaLarga(fecha)} · total actual ${hTxt(r.total)}`)}
     ${cerrada ? '<p class="mb-3 rounded-xl bg-blue-100 px-4 py-3 text-sm text-blue-900">Esta semana ya fue entregada. El cambio se mostrará como diferencia contra lo entregado y pide un motivo.</p>' : ''}
     ${ui.errorDia ? `<p class="mb-3 rounded-xl bg-red-100 px-4 py-3 text-sm text-red-800">${esc(ui.errorDia)}</p>` : ''}
     <form data-f="corregir-dia" data-emp="${empId}" data-fecha="${fecha}" class="space-y-3">
@@ -141,7 +140,7 @@ function vistaSemana({ st, ui }) {
   const difs = S.diferenciasContraCierre(st, lunes), corr = st.correcciones.filter(c => lunesDe(c.fecha) === lunes);
   const banner = ultimo
     ? `<div class="mb-4 space-y-2 rounded-2xl bg-blue-100 p-4 text-sm text-blue-900"><p><b>Semana entregada</b> el ${fechaCompleta(ultimo.fecha)} · versión ${ultimo.version}</p>
-        ${difs.length ? `<p>Cambios después de entregarla:</p><ul class="list-disc pl-5">${difs.map(d => `<li>${esc(d.nombre)}: <b>${conSigno(d.dif)}</b> respecto a lo entregado</li>`).join('')}</ul>
+        ${difs.length ? `<p>Cambios después de entregarla:</p><ul class="list-disc pl-5">${difs.map(d => `<li>${esc(d.nombre)}: <b>${difTxt(d.dif, 'lo entregado')}</b></li>`).join('')}</ul>
           ${corr.length ? `<ul class="list-disc pl-5 text-blue-800">${corr.map(c => `<li>${fechaCorta(c.fecha)} ${esc(S.empleado(st, c.empId)?.nombre || '')}: ${esc(c.motivo)}</li>`).join('')}</ul>` : ''}
           <div class="pt-1">${boton(`Volver a cerrar (versión ${ultimo.version + 1})`, 'data-a="cerrar-semana"', 'bg-blue-700 text-white font-semibold')}</div>` : '<p>Sin cambios desde la entrega.</p>'}</div>`
     : `<div class="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-teal-100 p-4 text-sm text-teal-900"><span><b>Semana abierta.</b> Los totales se actualizan al marcar.</span>${boton('Cerrar semana', 'data-a="cerrar-semana"', 'bg-white font-semibold')}</div>`;
@@ -150,15 +149,15 @@ function vistaSemana({ st, ui }) {
     <div class="grid grid-cols-2 gap-2">${botonPri('Compartir PDF', 'data-a="pdf-compartir"')}${boton('Descargar PDF', 'data-a="pdf-descargar"')}</div></div>`;
   if (!filas.length) return cabeza + vacio('No hay personas activas.');
   const cards = filas.map(f => `<article class="rounded-2xl border border-slate-200 bg-white p-4">
-    <div class="flex items-start justify-between gap-3"><div><strong class="text-lg">${esc(f.emp.nombre)}</strong>
-      <p class="text-sm text-slate-500">${f.dias} ${f.dias === 1 ? 'día' : 'días'} · ${conSigno(f.vs)} contra el promedio</p></div>
-      <div class="text-right"><div class="text-2xl font-bold tabular-nums">${hhmm(f.total)}</div>${f.porRevisar ? pildora(`${f.porRevisar} por revisar`, 'bg-amber-100 text-amber-800') : ''}</div></div>
-    <div class="mt-3 grid grid-cols-3 gap-2 text-center text-xs"><div class="rounded-lg bg-teal-50 py-2 text-teal-800"><b class="block text-base">${hhmm(f.normales)}</b>normales</div>
-      <div class="rounded-lg bg-blue-50 py-2 text-blue-800"><b class="block text-base">${hhmm(f.extraTurno)}</b>extra</div>
-      <div class="rounded-lg bg-violet-50 py-2 text-violet-800"><b class="block text-base">${hhmm(f.extraSinTurno)}</b>sin turno</div></div>
+    <div class="flex items-start justify-between gap-3"><div class="min-w-0"><strong class="text-lg">${esc(f.emp.nombre)}</strong>
+      <p class="text-sm text-slate-500">${f.dias} ${f.dias === 1 ? 'día' : 'días'} · ${difTxt(f.vs)}</p></div>
+      <div class="flex-none text-right"><div class="whitespace-nowrap text-xl font-bold tabular-nums">${hTxt(f.total)}</div>${f.porRevisar ? pildora(`${f.porRevisar} por revisar`, 'bg-amber-100 text-amber-800') : ''}</div></div>
+    <div class="mt-3 grid grid-cols-3 gap-2 text-center text-xs"><div class="rounded-lg bg-teal-50 py-2 text-teal-800"><b class="block text-sm">${hTxt(f.normales)}</b>normales</div>
+      <div class="rounded-lg bg-blue-50 py-2 text-blue-800"><b class="block text-sm">${hTxt(f.extraTurno)}</b>extra</div>
+      <div class="rounded-lg bg-violet-50 py-2 text-violet-800"><b class="block text-sm">${hTxt(f.extraSinTurno)}</b>sin turno</div></div>
     <a href="#/semana/${f.emp.id}" class="mt-3 flex min-h-[44px] items-center justify-center rounded-xl border border-slate-300 text-sm font-medium">Ver semana día por día</a></article>`).join('');
-  return cabeza + banner + `<div class="mb-4 flex items-center justify-between rounded-2xl bg-slate-900 p-4 text-white"><span>Total del equipo</span><b class="text-2xl tabular-nums">${hhmm(total)}</b></div>
-    <div class="space-y-3">${cards}</div><p class="mt-3 text-center text-xs text-slate-500">Promedio del equipo: ${hhmm(promedio)}</p>`;
+  return cabeza + banner + `<div class="mb-4 flex items-center justify-between rounded-2xl bg-slate-900 p-4 text-white"><span>Total del equipo</span><b class="text-2xl tabular-nums">${hTxt(total)}</b></div>
+    <div class="space-y-3">${cards}</div><p class="mt-3 text-center text-xs text-slate-500">Promedio del equipo: ${hTxt(promedio)}</p>`;
 }
 
 function vistaDesglose({ st, ui, p }) {
@@ -170,15 +169,15 @@ function vistaDesglose({ st, ui, p }) {
     const r = d.resumen, hubo = d.tramos.length > 0;
     return `<div class="rounded-2xl border border-slate-200 ${hubo ? 'bg-white' : 'bg-slate-50 text-slate-400'} p-4 ${d.sinTurno && hubo ? '!bg-violet-50' : ''}">
       <div class="flex items-center justify-between"><div><b>${DIAS_LARGOS[diaSemana(d.fecha)]}</b> <span class="text-sm text-slate-500">${fechaCorta(d.fecha)}</span> ${d.sinTurno ? pildora('sin turno', 'bg-violet-100 text-violet-800') : ''}</div>
-        ${hubo ? `<b class="text-xl tabular-nums">${hhmm(r.total)}</b>` : '<span class="text-sm">No asistió</span>'}</div>
+        ${hubo ? `<b class="text-xl tabular-nums">${hTxt(r.total)}</b>` : '<span class="text-sm">No asistió</span>'}</div>
       ${hubo ? `<p class="mt-1 text-sm text-slate-600">${d.tramos.map(t => `${deMin(t.entrada)} a ${t.salida != null ? deMin(t.salida) : 'sin salida'}`).join(' · ')}</p>
-        <p class="mt-1 text-sm">${d.sinTurno ? `<span class="text-violet-700">Extra sin turno ${hhmm(r.extraSinTurno)}</span>` : `<span class="text-teal-700">Normales ${hhmm(r.normales)}</span>${r.extraTurno ? ` · <span class="text-blue-700">Extra ${hhmm(r.extraTurno)}</span>` : ''}`}
+        <p class="mt-1 text-sm">${d.sinTurno ? `<span class="text-violet-700">Extra sin turno ${hTxt(r.extraSinTurno)}</span>` : `<span class="text-teal-700">Normales ${hTxt(r.normales)}</span>${r.extraTurno ? ` · <span class="text-blue-700">Extra ${hTxt(r.extraTurno)}</span>` : ''}`}
           ${r.porRevisar ? pildora('por revisar', 'bg-amber-100 text-amber-800') : ''}</p>` : ''}
       <a href="#/dia/${empId}/${d.fecha}" class="mt-2 inline-flex min-h-[44px] items-center text-sm font-medium text-blue-700 underline">${hubo ? 'Corregir' : 'Agregar horas'}</a></div>`;
   }).join('');
   return `${volver('#/semana', 'Resumen semanal')}${titulo(esc(emp.nombre), `Semana ${rangoSemana(lunes)}`)}<div class="space-y-3">${filas}</div>
-    <div class="mt-4 rounded-2xl bg-slate-900 p-4 text-white"><div class="flex justify-between text-lg"><span>Suma de los días</span><b class="tabular-nums">${hhmm(suma)}</b></div>
-      <p class="mt-1 text-sm text-slate-300">Normales ${hhmm(sn)} · Extra ${hhmm(sx)} · Sin turno ${hhmm(sf)}</p></div>`;
+    <div class="mt-4 rounded-2xl bg-slate-900 p-4 text-white"><div class="flex justify-between text-lg"><span>Suma de los días</span><b class="tabular-nums">${hTxt(suma)}</b></div>
+      <p class="mt-1 text-sm text-slate-300">Normales ${hTxt(sn)} · Extra ${hTxt(sx)} · Sin turno ${hTxt(sf)}</p></div>`;
 }
 
 // ================= EMPLEADOS =================
@@ -257,12 +256,12 @@ function vistaSugerencia({ st, ui }) {
     const k = `${f}|${x.emp.id}`, est = st.avisos[k] || 0;
     return `<div class="flex items-center gap-3 rounded-2xl border border-slate-200 ${off ? 'bg-slate-50 opacity-70' : 'bg-white'} p-4">
       <span class="grid h-9 w-9 flex-none place-items-center rounded-full ${off ? 'bg-slate-400' : 'bg-blue-700'} font-bold text-white">${off ? '–' : i + 1}</span>
-      <div class="min-w-0 flex-1"><strong>${esc(x.emp.nombre)}</strong><p class="text-sm text-slate-500">${off ? 'No tiene disponibilidad ese día.' : `Lleva ${hhmm(x.total)} esta semana (${conSigno(x.total - s.promedio)} contra el promedio) · ${x.franjas.map(fr => `${fr.desde}–${fr.hasta}`).join(' y ')}`}</p></div>
+      <div class="min-w-0 flex-1"><strong>${esc(x.emp.nombre)}</strong><p class="text-sm text-slate-500">${off ? 'No tiene disponibilidad ese día.' : `Lleva ${hTxt(x.total)} esta semana · ${difTxt(x.total - s.promedio)} · ${x.franjas.map(fr => `${fr.desde}–${fr.hasta}`).join(' y ')}`}</p></div>
       ${off ? '' : `<button data-a="aviso" data-f="${f}" data-id="${x.emp.id}" class="min-h-[44px] rounded-full px-3 text-xs font-semibold ${ESTADOS_AVISO[est][1]}">${ESTADOS_AVISO[est][0]}</button>`}</div>`;
   };
   return `${titulo('¿Quién debería venir?', 'Solo es una ayuda: ordena por las horas de la semana, de menos a más, entre los disponibles. Tú decides. Toca el estado para anotar a quién avisaste.')}
     <div class="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">${dias.map(d => `<button data-a="sug-dia" data-d="${d}" class="min-h-[52px] flex-none rounded-xl border px-4 text-sm ${d === f ? 'border-blue-700 bg-blue-700 font-semibold text-white' : 'border-slate-300 bg-white'}">${DIAS[diaSemana(d)]}<br>${fechaCorta(d)}</button>`).join('')}</div>
-    <p class="mb-3 text-sm text-slate-500">${fechaLarga(f)} · promedio de la semana ${hhmm(s.promedio)}</p>
+    <p class="mb-3 text-sm text-slate-500">${fechaLarga(f)} · promedio de la semana ${hTxt(s.promedio)}</p>
     <div class="space-y-3">${s.con.length ? s.con.map((x, i) => item(x, i, false)).join('') : vacio('Nadie tiene disponibilidad registrada ese día.')}</div>
     ${s.sin.length ? `<h2 class="mb-2 mt-5 text-sm font-semibold text-slate-500">No disponibles ese día</h2><div class="space-y-2">${s.sin.map(x => item(x, 0, true)).join('')}</div>` : ''}`;
 }
@@ -284,7 +283,7 @@ function vistaMas({ st }) {
       <p class="mt-2 text-sm text-slate-600"><b>iPhone (Safari):</b> botón Compartir → “Agregar a pantalla de inicio”. Ábrela siempre desde ese ícono.</p>
       <p class="mt-2 text-sm text-slate-600">Después funciona sin internet.</p>`)}
     <h2 class="mb-2 mt-7 text-lg font-semibold">Datos</h2>
-    <div class="grid gap-2">${boton('Cargar datos de ejemplo', 'data-a="cargar-ejemplo"')}${boton('Borrar todos los datos', 'data-a="borrar-todo"', 'border border-red-300 text-red-700 bg-white')}</div>
+    <div class="grid gap-2">${boton('Borrar todos los datos', 'data-a="borrar-todo"', 'border border-red-300 text-red-700 bg-white')}</div>
     <p class="mt-5 text-center text-xs text-slate-400">Hoy es ${fechaLarga(a.fecha)}</p>`;
 }
 
@@ -423,10 +422,6 @@ export const acciones = {
     const ok = await confirmar({ titulo: '¿Restaurar esta copia?', mensaje: `Reemplaza TODOS los datos de este teléfono por los de la copia (${r.datos.empleados.length} personas, ${r.datos.tramos.length} marcas).`, boton: 'Sí, restaurar', peligro: true });
     if (!ok) return false;
     Object.keys(st).forEach(k => delete st[k]); Object.assign(st, r.datos); ui.semana = null; ui.fecha = null; toast('Copia restaurada.'); return true;
-  },
-  'cargar-ejemplo': async ({ st }) => {
-    const ok = await confirmar({ titulo: '¿Cargar datos de ejemplo?', mensaje: 'Reemplaza los datos actuales por unos de prueba (6 personas y dos semanas de horas).', boton: 'Sí, cargar', peligro: true });
-    if (!ok) return false; Object.keys(st).forEach(k => delete st[k]); Object.assign(st, datosEjemplo()); toast('Datos de ejemplo cargados.'); return true;
   },
   'borrar-todo': async ({ st, ui }) => {
     const ok = await confirmar({ titulo: '¿Borrar todos los datos?', mensaje: 'Se eliminan personas, horas, turnos y disponibilidad de este teléfono. Esto no se puede deshacer. Guarda una copia antes.', boton: 'Sí, borrar todo', peligro: true });

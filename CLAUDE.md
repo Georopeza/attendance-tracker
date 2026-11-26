@@ -33,6 +33,7 @@ Lee antes de tocar nada: `documentacion/REQUISITOS.md` (qué se pidió y qué es
 - Antes del inicio del turno no cuenta; día sin turno = todo extra de día sin turno (otro color).
 - **Archivar, no eliminar** empleados con historial. Confirmación antes de archivar/borrar.
 - No hay bitácora de cambios (se descartó). Las correcciones en semanas cerradas guardan su motivo.
+- Las duraciones se muestran en palabras (`hTxt`/`difTxt` en `horas.js`: "7 h 38 min"), nunca como `7:38`; las horas del reloj sí van como `09:02`. La app no ofrece datos de ejemplo: solo las pruebas los cargan (`docs/js/ejemplo.js`).
 - Colores de horas: normales verde azulado, extra tras turno azul, extra día sin turno violeta,
   "por revisar" ámbar.
 

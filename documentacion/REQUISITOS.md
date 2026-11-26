@@ -3,7 +3,8 @@
 > **Actualización:** el sistema es **genérico** (sirve para cualquier grupo, taller, escuela, etc.), lo usa
 > **una sola persona desde el celular**, sin internet, con los datos en el teléfono. Se descartaron
 > coordinadores, bitácora, nube y Excel (el reporte es PDF). La zona horaria y un nombre opcional se
-> configuran en Ajustes. Lo que sigue es el levantamiento original; donde choque con esto, manda esta nota.
+> configuran en Ajustes. Las horas se muestran **en palabras** ("7 h 38 min", "22 h"), sin dos puntos, y las
+> comparaciones también ("3 h 36 min menos que el promedio"). No hay datos de ejemplo en la app. Lo que sigue es el levantamiento original; donde choque con esto, manda esta nota.
 
 Documento de referencia: recoge lo pedido por el coordinador y las decisiones ya confirmadas.
 Si algo cambia, se actualiza aquí primero.

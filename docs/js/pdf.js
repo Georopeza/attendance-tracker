@@ -1,5 +1,5 @@
 // Reporte semanal en PDF (se genera en el teléfono, sin internet). Usa jsPDF + autoTable (carpeta vendor/).
-import { hhmm, deMin } from './horas.js';
+import { hTxt, deMin } from './horas.js';
 import { ahora, DIAS_LARGOS, diaSemana, fechaCompleta, fechaCorta, sumarDias } from './fechas.js';
 import * as S from './servicios.js';
 
@@ -32,8 +32,8 @@ export function generarPdf(st, lunes) {
   doc.autoTable({
     startY: 32, margin: { left: M, right: M }, theme: 'grid',
     head: [['Persona', 'Días', 'Normales', 'Extra tras turno', 'Extra día sin turno', 'Total']],
-    body: filas.map(f => [f.emp.nombre, String(f.dias), hhmm(f.normales), hhmm(f.extraTurno), hhmm(f.extraSinTurno), hhmm(f.total) + (f.porRevisar ? '*' : '')]),
-    foot: [['Total del equipo', String(sum('dias')), hhmm(sum('normales')), hhmm(sum('extraTurno')), hhmm(sum('extraSinTurno')), hhmm(sum('total'))]],
+    body: filas.map(f => [f.emp.nombre, String(f.dias), hTxt(f.normales), hTxt(f.extraTurno), hTxt(f.extraSinTurno), hTxt(f.total) + (f.porRevisar ? '*' : '')]),
+    foot: [['Total del equipo', String(sum('dias')), hTxt(sum('normales')), hTxt(sum('extraTurno')), hTxt(sum('extraSinTurno')), hTxt(sum('total'))]],
     styles: { fontSize: 9, cellPadding: 2.2, lineColor: [201, 209, 220], lineWidth: 0.2 },
     headStyles: { fillColor: AZUL, textColor: 255, halign: 'center' }, footStyles: { fillColor: SUAVE, textColor: 0, fontStyle: 'bold' },
     columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right', textColor: TEAL }, 3: { halign: 'right', textColor: AZ }, 4: { halign: 'right', textColor: VIOLETA }, 5: { halign: 'right', fontStyle: 'bold' } },
@@ -56,11 +56,11 @@ export function generarPdf(st, lunes) {
       const r = d.resumen, hubo = d.tramos.length > 0, nombre = DIAS_LARGOS[diaSemana(d.fecha)] + (d.sinTurno ? ' (sin turno)' : '');
       if (!hubo) return [nombre, fechaCorta(d.fecha), 'No asistió', '', '', '', ''];
       return [nombre, fechaCorta(d.fecha), d.tramos.map(t => `${deMin(t.entrada)} a ${t.salida != null ? deMin(t.salida) : 'sin salida'}`).join('\n'),
-        hhmm(r.normales), hhmm(r.extraTurno), hhmm(r.extraSinTurno), hhmm(r.total) + (r.porRevisar ? '*' : '')];
+        hTxt(r.normales), hTxt(r.extraTurno), hTxt(r.extraSinTurno), hTxt(r.total) + (r.porRevisar ? '*' : '')];
     });
     doc.autoTable({
       startY: y + 7, margin: { left: M, right: M }, theme: 'grid', head: [['Día', 'Fecha', 'Entrada / Salida', 'Normales', 'Extra', 'Extra s/ turno', 'Total del día']], body: cuerpo,
-      foot: [['Total de la semana', '', `${f.dias} ${f.dias === 1 ? 'día asistido' : 'días asistidos'}`, hhmm(f.normales), hhmm(f.extraTurno), hhmm(f.extraSinTurno), hhmm(f.total)]],
+      foot: [['Total de la semana', '', `${f.dias} ${f.dias === 1 ? 'día asistido' : 'días asistidos'}`, hTxt(f.normales), hTxt(f.extraTurno), hTxt(f.extraSinTurno), hTxt(f.total)]],
       styles: { fontSize: 8.5, cellPadding: 1.8, lineColor: [201, 209, 220], lineWidth: 0.2, valign: 'middle' },
       headStyles: { fillColor: AZUL, textColor: 255, fontSize: 8 }, footStyles: { fillColor: SUAVE, textColor: 0, fontStyle: 'bold' },
       columnStyles: { 0: { cellWidth: 36 }, 1: { cellWidth: 13 }, 2: { cellWidth: 38 }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' }, 6: { halign: 'right', fontStyle: 'bold' } },

@@ -34,9 +34,10 @@ const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else cons
 
   // Datos de ejemplo
   await page.click('nav >> text=Más');
-  await page.click('text=Cargar datos de ejemplo');
-  await page.click('dialog >> text=Sí, cargar');
-  await page.waitForSelector('#toast:not([hidden])');
+  await page.waitForTimeout(250); ok(await page.locator('text=Cargar datos de ejemplo').count() === 0, 'la app ya no ofrece datos de ejemplo');
+  // Los datos de ejemplo solo se usan en las pruebas: se cargan directo en el almacenamiento.
+  await page.evaluate(async () => { const m = await import('./js/ejemplo.js'); localStorage.setItem('asistencia:v1', JSON.stringify(m.datosEjemplo())); });
+  await page.reload(); await page.waitForSelector('main');
   await page.click('nav >> text=Hoy');
   await page.waitForTimeout(250); ok(await page.locator('article').count() === 6, 'seis tarjetas de personas');
 
@@ -79,12 +80,12 @@ const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else cons
   await page.click('[aria-label="Semana anterior"]');
   await page.waitForTimeout(250); ok(await page.locator('text=Total del equipo').count() === 1, 'resumen semanal');
   const luis = page.locator('article', { hasText: 'Luis Mora' });
-  await page.waitForTimeout(250); ok(await luis.locator('text=39:38').count() === 1, 'Luis suma 39:38 en la semana anterior');
+  await page.waitForTimeout(250); ok(await luis.locator('text=39 h 38 min').count() === 1, 'Luis suma 39 h 38 min en la semana anterior');
   await page.waitForTimeout(250); ok(await luis.locator('text=1 por revisar').count() === 1, 'Luis tiene un día por revisar');
   await page.screenshot({ path: `${OUT}/semana.png`, fullPage: false });
   await luis.locator('text=Ver semana día por día').click();
   await page.waitForTimeout(250); ok(await page.locator('text=Suma de los días').count() === 1, 'desglose por día');
-  await page.waitForTimeout(250); ok(await page.locator('text=39:38').count() >= 1, 'la suma del desglose es 39:38');
+  await page.waitForTimeout(250); ok(await page.locator('text=39 h 38 min').count() >= 1, 'la suma del desglose es 39 h 38 min');
   await page.screenshot({ path: `${OUT}/desglose.png`, fullPage: true });
   await page.goBack();
   const [descarga] = await Promise.all([page.waitForEvent('download'), page.click('text=Descargar PDF')]);
@@ -104,7 +105,7 @@ const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else cons
   await page.click('text=Guardar corrección');
   await page.waitForTimeout(300);
   await page.goto(BASE + '#/semana');
-  await page.waitForTimeout(250); ok(await page.locator('text=+0:22').count() >= 1, 'muestra la diferencia contra lo entregado (+0:22: 8:08 se redondea a 8:00)');
+  await page.waitForTimeout(250); ok(await page.locator('text=22 min más que lo entregado').count() >= 1, 'muestra la diferencia contra lo entregado (22 min más: 8 h 08 min se redondea a 8 h)');
   await page.screenshot({ path: `${OUT}/semana-cerrada.png` });
 
   // Sugerencia

@@ -4,6 +4,7 @@ import { estadoInicial } from '../docs/js/store.js';
 import { fijarReloj, fijarZona, ahora, lunesDe, sumarDias, diaSemana } from '../docs/js/fechas.js';
 import * as A from '../docs/js/acciones.js';
 import * as S from '../docs/js/servicios.js';
+import { hTxt, difTxt } from '../docs/js/horas.js';
 import { datosEjemplo } from '../docs/js/ejemplo.js';
 
 const HOY = '2026-11-26'; // jueves
@@ -197,4 +198,15 @@ test('primer paso: nombre, descripción y personas (una por línea, sin repetir)
   assert.equal(st.ajustes.organizacion, 'Taller San José'); assert.equal(st.ajustes.descripcion, 'Asistencia del taller');
   assert.equal(st.ajustes.bienvenida, true);
   assert.ok(A.configuracionInicial(estadoInicial(), { organizacion: '', descripcion: '', personas: '' }).ok);  // todo es opcional
+});
+
+test('duraciones en palabras, sin dos puntos', () => {
+  assert.equal(hTxt(0), '0 h'); assert.equal(hTxt(45), '45 min'); assert.equal(hTxt(60), '1 h');
+  assert.equal(hTxt(458), '7 h 38 min'); assert.equal(hTxt(1320), '22 h');
+});
+test('comparaciones en palabras', () => {
+  assert.equal(difTxt(0), 'igual que el promedio');
+  assert.equal(difTxt(140), '2 h 20 min más que el promedio');
+  assert.equal(difTxt(-45), '45 min menos que el promedio');
+  assert.equal(difTxt(22, 'lo entregado'), '22 min más que lo entregado');
 });
