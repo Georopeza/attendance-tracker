@@ -4,8 +4,8 @@ Aplicación web instalable (PWA) para llevar la asistencia y las horas. Funciona
 **todos los datos se guardan solo en el teléfono**. No hay servidor ni cuentas.
 
 ## Qué incluye
-Hoy (marcar en el momento o al final del día), resumen semanal con desglose por día, cierre de semana,
-corrección de días, personas, turnos, disponibilidad, sugerencia de quién debería venir, reporte semanal
+Hoy (marcar en el momento o al final del día), resumen semanal y mensual con desglose, cierre de semana,
+corrección de días, personas, turnos, disponibilidad, sugerencia de quién debería venir, reporte semanal y mensual
 en PDF (compartir o descargar) y copia de seguridad.
 
 ## Probarla en un computador

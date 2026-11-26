@@ -11,7 +11,8 @@ rápida y sencilla. Sirve para cualquier grupo: un salón, un taller, una escuel
 ## Qué hace
 - **Hoy:** marcar *Entró / Salió / Volvió* con un toque, o llenar el día al final con una lista. Marcación en bloque.
 - **Semana:** total por persona (normales, extra, días asistidos), desglose día por día, promedio del equipo,
-  cierre de semana con versiones y corrección de días con motivo.
+  cierre de semana con versiones y corrección de días con motivo. Cada semana empieza en cero.
+- **Mes:** suma los días del mes por persona, semana por semana, con PDF.
 - **Horas:** dentro del turno son normales; después del fin del turno, extra; sin turno, todo es extra.
   El total del día se redondea a 15 minutos (los casos intermedios se marcan *por revisar*).
 - **Personas, turnos y disponibilidad** (con vigencias por fecha), y una **sugerencia** de quién debería venir

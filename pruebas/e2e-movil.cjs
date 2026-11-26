@@ -106,6 +106,24 @@ const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else cons
   const pdf = fs.readFileSync(ruta);
   ok(pdf.slice(0, 5).toString() === '%PDF-' && pdf.length > 3000, `PDF generado (${pdf.length} bytes) con nombre ${descarga.suggestedFilename()}`);
 
+  // Resumen del mes
+  await page.goto(BASE + '#/mes'); await page.waitForTimeout(300);
+  ok(await page.locator('h1', { hasText: 'noviembre de 2026' }).count() === 1, 'resumen mensual de noviembre');
+  ok(await page.locator('text=Total del equipo').locator('xpath=..').locator('text=251 h 38 min').count() === 1, 'el mes suma las semanas (153 h 38 min + 98 h de esta semana = 251 h 38 min)');
+  await page.screenshot({ path: `${OUT}/mes.png`, fullPage: false });
+  await page.click('[aria-label="Mes anterior"]');
+  ok(await page.locator('text=Total del equipo').locator('xpath=..').locator('text=0 h').count() === 1, 'octubre sin horas: 0 h');
+  await page.click('[aria-label="Mes siguiente"]');
+  await page.locator('article', { hasText: 'Luis Mora' }).locator('text=Ver el mes semana por semana').click();
+  await page.waitForTimeout(300); ok(await page.locator('text=Semana 16/11 al 22/11').count() === 1 && await page.locator('text=Semana 1/11 al 1/11').count() === 0, 'el mes por semanas muestra solo las semanas con asistencia');
+  await page.screenshot({ path: `${OUT}/mes-persona.png`, fullPage: true });
+  await page.goBack();
+  const [dm] = await Promise.all([page.waitForEvent('download'), page.click('text=Descargar PDF')]);
+  await dm.saveAs(`${OUT}/mes.pdf`);
+  const pm = fs.readFileSync(`${OUT}/mes.pdf`);
+  ok(pm.slice(0, 5).toString() === '%PDF-' && /horas-mes-2026-11\.pdf/.test(dm.suggestedFilename()), `PDF mensual generado (${pm.length} bytes) con nombre ${dm.suggestedFilename()}`);
+  await page.goto(BASE + '#/semana'); await page.waitForTimeout(250);
+
   // Cerrar semana, corregir y ver la diferencia
   await page.click('text=Cerrar semana');
   await page.click('dialog >> text=Cerrar semana');

@@ -238,3 +238,29 @@ test('cambiar la hora exacta de la última marca', () => {
   assert.match(A.cambiarUltimaMarca(st, ana, '07:00').error, /anterior a la entrada/);
   assert.match(A.cambiarUltimaMarca(st, ana, '13:00').error, /todavía no ha llegado/);
 });
+
+test('resumen del mes: suma por fecha y reparte la semana que cruza dos meses', () => {
+  const st = nuevo('Ana'), ana = id(st, 'Ana'); reloj(10 * 60, '2026-12-15');
+  // Semana del lun 26/10 al dom 1/11: jueves 29/10 (7 h), viernes 30/10 (7 h), domingo 1/11 (4 h, sin turno)
+  st.tramos.push({ id: 950, empId: ana, fecha: '2026-10-29', entrada: 540, salida: 960 }, { id: 951, empId: ana, fecha: '2026-10-30', entrada: 540, salida: 960 },
+    { id: 952, empId: ana, fecha: '2026-11-01', entrada: 540, salida: 780 }, { id: 953, empId: ana, fecha: '2026-11-03', entrada: 540, salida: 960 });
+  const oct = S.resumenMes(st, '2026-10-01').filas[0], nov = S.resumenMes(st, '2026-11-01').filas[0];
+  assert.equal(oct.total, 14 * 60); assert.equal(oct.dias, 2);
+  assert.equal(nov.total, 4 * 60 + 7 * 60); assert.equal(nov.extraSinTurno, 4 * 60); assert.equal(nov.dias, 2);
+  // la semana de transición se parte: lo del 29 y 30 de octubre no entra en noviembre
+  const semOct = S.semanasDelMes(st, ana, '2026-10-01'), semNov = S.semanasDelMes(st, ana, '2026-11-01');
+  assert.equal(semOct[semOct.length - 1].completa, false); assert.equal(semOct[semOct.length - 1].total, 14 * 60);
+  assert.equal(semNov[0].completa, false); assert.equal(semNov[0].desde, '2026-11-01'); assert.equal(semNov[0].total, 4 * 60);
+  // el mes completo = suma de sus semanas; y octubre + noviembre = lo que suman las semanas completas que los contienen
+  assert.equal(semNov.reduce((s, w) => s + w.total, 0), nov.total);
+  const completa = S.resumenSemana(st, '2026-10-26').filas[0].total;
+  assert.equal(completa, oct.total + 4 * 60);
+});
+
+test('cada semana empieza en cero: lo del mes no se arrastra a la semana siguiente', () => {
+  const st = nuevo('Ana'), ana = id(st, 'Ana'); reloj(10 * 60, '2026-12-15');
+  for (let i = 0; i < 5; i++) st.tramos.push({ id: 960 + i, empId: ana, fecha: sumarDias('2026-11-23', i), entrada: 540, salida: 960 });
+  assert.equal(S.resumenSemana(st, '2026-11-23').filas[0].total, 35 * 60);
+  assert.equal(S.resumenSemana(st, '2026-11-30').filas[0].total, 0);              // la semana siguiente arranca en cero
+  assert.equal(S.resumenMes(st, '2026-11-01').filas[0].total, 35 * 60);           // y el mes conserva lo acumulado
+});

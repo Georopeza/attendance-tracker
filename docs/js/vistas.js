@@ -1,11 +1,11 @@
 // Pantallas. Cada vista recibe { st, ui, p } y devuelve HTML. `acciones` y `formularios` atienden los toques y envíos.
 import { hTxt, difTxt, aMin, deMin } from './horas.js';
-import { ahora, zonaActiva, fijarZona, DIAS, DIAS_LARGOS, diaSemana, lunesDe, sumarDias, fechaCorta, fechaCompleta, fechaLarga, rangoSemana } from './fechas.js';
+import { ahora, zonaActiva, fijarZona, DIAS, DIAS_LARGOS, diaSemana, lunesDe, sumarDias, fechaCorta, fechaCompleta, fechaLarga, rangoSemana, primerDiaMes, sumarMeses, nombreMes, rangoCorto } from './fechas.js';
 import * as S from './servicios.js';
 import * as A from './acciones.js';
 import { esc, toast, confirmar, formulario } from './ui.js';
 import { guardar, estadoInicial, pedirPersistencia } from './store.js';
-import { compartirPdf, descargarPdf, compartirArchivo } from './pdf.js';
+import { compartirPdf, descargarPdf, compartirPdfMes, descargarPdfMes, compartirArchivo } from './pdf.js';
 
 // ---------- átomos ----------
 const tarjeta = (c, clase = '') => `<section class="rounded-2xl border border-slate-200 bg-white p-4 ${clase}">${c}</section>`;
@@ -136,6 +136,10 @@ function vistaDia({ st, ui, p }) {
 }
 
 // ================= SEMANA =================
+const conmutador = actual => `<div class="mb-4 grid grid-cols-2 rounded-xl border border-slate-200 bg-white p-1 text-sm font-medium" role="tablist">
+  <a href="#/semana" role="tab" aria-selected="${actual === 'semana'}" class="flex min-h-[44px] items-center justify-center rounded-lg ${actual === 'semana' ? 'bg-blue-700 text-white' : ''}">Semana</a>
+  <a href="#/mes" role="tab" aria-selected="${actual === 'mes'}" class="flex min-h-[44px] items-center justify-center rounded-lg ${actual === 'mes' ? 'bg-blue-700 text-white' : ''}">Mes</a></div>`;
+
 function vistaSemana({ st, ui }) {
   const a = ahora(), lunes = ui.semana || lunesDe(a.fecha), cierres = S.cierresDe(st, lunes), ultimo = cierres[cierres.length - 1];
   const { filas, promedio } = S.resumenSemana(st, lunes), total = filas.reduce((s, f) => s + f.total, 0);
@@ -146,7 +150,7 @@ function vistaSemana({ st, ui }) {
           ${corr.length ? `<ul class="list-disc pl-5 text-blue-800">${corr.map(c => `<li>${fechaCorta(c.fecha)} ${esc(S.empleado(st, c.empId)?.nombre || '')}: ${esc(c.motivo)}</li>`).join('')}</ul>` : ''}
           <div class="pt-1">${boton(`Volver a cerrar (versión ${ultimo.version + 1})`, 'data-a="cerrar-semana"', 'bg-blue-700 text-white font-semibold')}</div>` : '<p>Sin cambios desde la entrega.</p>'}</div>`
     : `<div class="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-teal-100 p-4 text-sm text-teal-900"><span><b>Semana abierta.</b> Los totales se actualizan al marcar.</span>${boton('Cerrar semana', 'data-a="cerrar-semana"', 'bg-white font-semibold')}</div>`;
-  const cabeza = `<div class="mb-4 space-y-3">${stepper(flecha('←', 'data-a="sem" data-d="-7"', 'Semana anterior'),
+  const cabeza = `${conmutador('semana')}<div class="mb-4 space-y-3">${stepper(flecha('←', 'data-a="sem" data-d="-7"', 'Semana anterior'),
     `<h1 class="text-xl font-bold">Semana ${rangoSemana(lunes)}</h1><p class="text-sm text-slate-500">de lunes a domingo</p>`, flecha('→', 'data-a="sem" data-d="7"', 'Semana siguiente'))}
     <div class="grid grid-cols-2 gap-2">${botonPri('Compartir PDF', 'data-a="pdf-compartir"')}${boton('Descargar PDF', 'data-a="pdf-descargar"')}</div></div>`;
   if (!filas.length) return cabeza + vacio('No hay personas activas.');
@@ -180,6 +184,41 @@ function vistaDesglose({ st, ui, p }) {
   return `${volver('#/semana', 'Resumen semanal')}${titulo(esc(emp.nombre), `Semana ${rangoSemana(lunes)}`)}<div class="space-y-3">${filas}</div>
     <div class="mt-4 rounded-2xl bg-slate-900 p-4 text-white"><div class="flex justify-between text-lg"><span>Suma de los días</span><b class="tabular-nums">${hTxt(suma)}</b></div>
       <p class="mt-1 text-sm text-slate-300">Normales ${hTxt(sn)} · Extra ${hTxt(sx)} · Sin turno ${hTxt(sf)}</p></div>`;
+}
+
+// ================= MES =================
+function vistaMes({ st, ui }) {
+  const a = ahora(), mes = ui.mes || primerDiaMes(a.fecha), enCurso = mes === primerDiaMes(a.fecha);
+  const { filas, promedio } = S.resumenMes(st, mes), total = filas.reduce((s, f) => s + f.total, 0);
+  const cabeza = `${conmutador('mes')}<div class="mb-4 space-y-3">${stepper(flecha('←', 'data-a="mes-nav" data-d="-1"', 'Mes anterior'),
+    `<h1 class="text-xl font-bold first-letter:uppercase">${nombreMes(mes)}</h1><p class="text-sm text-slate-500">${enCurso ? 'mes en curso' : 'del 1 al último día'}</p>`, flecha('→', 'data-a="mes-nav" data-d="1"', 'Mes siguiente'))}
+    <div class="grid grid-cols-2 gap-2">${botonPri('Compartir PDF', 'data-a="pdf-mes-compartir"')}${boton('Descargar PDF', 'data-a="pdf-mes-descargar"')}</div></div>`;
+  if (!filas.length) return cabeza + vacio('No hay personas activas.');
+  const nota = `<p class="mb-4 rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-600">Aquí se suman todos los días del mes. <b>Cada semana sigue empezando en cero</b> en la pestaña Semana. Una semana que cruza dos meses se reparte según el día.</p>`;
+  const cards = filas.map(f => `<article class="rounded-2xl border border-slate-200 bg-white p-4">
+    <div class="flex items-start justify-between gap-3"><div class="min-w-0"><strong class="text-lg">${esc(f.emp.nombre)}</strong>
+      <p class="text-sm text-slate-500">${f.dias} ${f.dias === 1 ? 'día' : 'días'} · ${difTxt(f.vs)}</p></div>
+      <div class="flex-none text-right"><div class="whitespace-nowrap text-xl font-bold tabular-nums">${hTxt(f.total)}</div>${f.porRevisar ? pildora(`${f.porRevisar} por revisar`, 'bg-amber-100 text-amber-800') : ''}</div></div>
+    <div class="mt-3 grid grid-cols-3 gap-2 text-center text-xs"><div class="rounded-lg bg-teal-50 py-2 text-teal-800"><b class="block text-sm">${hTxt(f.normales)}</b>normales</div>
+      <div class="rounded-lg bg-blue-50 py-2 text-blue-800"><b class="block text-sm">${hTxt(f.extraTurno)}</b>extra</div>
+      <div class="rounded-lg bg-violet-50 py-2 text-violet-800"><b class="block text-sm">${hTxt(f.extraSinTurno)}</b>sin turno</div></div>
+    <a href="#/mes/${f.emp.id}" class="mt-3 flex min-h-[44px] items-center justify-center rounded-xl border border-slate-300 text-sm font-medium">Ver el mes semana por semana</a></article>`).join('');
+  return cabeza + nota + `<div class="mb-4 flex items-center justify-between rounded-2xl bg-slate-900 p-4 text-white"><span>Total del equipo</span><b class="whitespace-nowrap text-2xl tabular-nums">${hTxt(total)}</b></div>
+    <div class="space-y-3">${cards}</div><p class="mt-3 text-center text-xs text-slate-500">Promedio del equipo en el mes: ${hTxt(promedio)}</p>`;
+}
+
+function vistaMesPersona({ st, ui, p }) {
+  const empId = Number(p[1]), emp = S.empleado(st, empId), mes = ui.mes || primerDiaMes(ahora().fecha);
+  if (!emp) return vacio('No se encontró a la persona.');
+  const todas = S.semanasDelMes(st, empId, mes), semanas = todas.filter(w => w.dias > 0), t = todas.reduce((x, w) => ({ dias: x.dias + w.dias, normales: x.normales + w.normales, extraTurno: x.extraTurno + w.extraTurno, extraSinTurno: x.extraSinTurno + w.extraSinTurno, total: x.total + w.total }), { dias: 0, normales: 0, extraTurno: 0, extraSinTurno: 0, total: 0 });
+  const filas = semanas.map(w => `<div class="rounded-2xl border border-slate-200 bg-white p-4">
+    <div class="flex items-center justify-between gap-2"><div><b>Semana ${rangoCorto(w.desde, w.hasta)}</b> ${w.completa ? '' : pildora('parcial: solo días del mes', 'bg-slate-100 text-slate-600')}</div><b class="whitespace-nowrap text-xl tabular-nums">${hTxt(w.total)}</b></div>
+    <p class="mt-1 text-sm text-slate-600">${w.dias} ${w.dias === 1 ? 'día' : 'días'} · <span class="text-teal-700">normales ${hTxt(w.normales)}</span> · <span class="text-blue-700">extra ${hTxt(w.extraTurno)}</span>${w.extraSinTurno ? ` · <span class="text-violet-700">sin turno ${hTxt(w.extraSinTurno)}</span>` : ''}${w.porRevisar ? ' ' + pildora('por revisar', 'bg-amber-100 text-amber-800') : ''}</p>
+    <button data-a="ver-semana" data-l="${w.lunes}" data-id="${empId}" class="mt-2 min-h-[44px] text-sm font-medium text-blue-700 underline">Ver esa semana día por día</button></div>`).join('');
+  return `${volver('#/mes', 'Resumen del mes')}${titulo(esc(emp.nombre), `<span class="inline-block first-letter:uppercase">${nombreMes(mes)}</span>`)}<div class="space-y-3">${filas || vacio('Sin asistencia en este mes.')}</div>
+    ${filas && todas.length > semanas.length ? '<p class="mt-3 text-center text-xs text-slate-500">Las semanas sin asistencia no se muestran.</p>' : ''}
+    <div class="mt-4 rounded-2xl bg-slate-900 p-4 text-white"><div class="flex justify-between text-lg"><span>Total del mes</span><b class="whitespace-nowrap tabular-nums">${hTxt(t.total)}</b></div>
+      <p class="mt-1 text-sm text-slate-300">${t.dias} ${t.dias === 1 ? 'día' : 'días'} · normales ${hTxt(t.normales)} · extra ${hTxt(t.extraTurno)} · sin turno ${hTxt(t.extraSinTurno)}</p></div>`;
 }
 
 // ================= EMPLEADOS =================
@@ -312,7 +351,7 @@ function vistaAjustes({ st }) {
 
 // ================= ENRUTADOR DE VISTAS =================
 export const RUTAS = {
-  hoy: { v: vistaHoy, tab: 'hoy' }, dia: { v: vistaDia, tab: 'hoy' }, semana: { v: c => (c.p[1] ? vistaDesglose(c) : vistaSemana(c)), tab: 'semana' },
+  hoy: { v: vistaHoy, tab: 'hoy' }, mes: { v: c => (c.p[1] ? vistaMesPersona(c) : vistaMes(c)), tab: 'semana' }, dia: { v: vistaDia, tab: 'hoy' }, semana: { v: c => (c.p[1] ? vistaDesglose(c) : vistaSemana(c)), tab: 'semana' },
   empleados: { v: vistaEmpleados, tab: 'mas' }, turnos: { v: vistaTurnos, tab: 'mas' }, disponibilidad: { v: vistaDisponibilidad, tab: 'mas' },
   disp: { v: vistaFicha, tab: 'mas' }, ajustes: { v: vistaAjustes, tab: 'mas' }, sugerencia: { v: vistaSugerencia, tab: 'mas' }, mas: { v: vistaMas, tab: 'mas' },
 };
@@ -357,6 +396,10 @@ export const acciones = {
   // Solo marca o desmarca casillas en pantalla: no hay que guardar ni volver a dibujar (se perderían).
   todos: ({ d }) => { document.querySelectorAll('[name^="vino-"]:not(:disabled)').forEach(c => { c.checked = d.v === '1'; }); return null; },
 
+  'mes-nav': ({ d, ui }) => { ui.mes = sumarMeses(ui.mes || primerDiaMes(ahora().fecha), Number(d.d)); return false; },
+  'ver-semana': ({ d, ui }) => { ui.semana = d.l; location.hash = `#/semana/${d.id}`; return null; },
+  'pdf-mes-compartir': async ({ st, ui }) => { const r = await compartirPdfMes(st, ui.mes || primerDiaMes(ahora().fecha)); if (r === 'descargado') toast('PDF guardado en tu teléfono.'); return false; },
+  'pdf-mes-descargar': ({ st, ui }) => { descargarPdfMes(st, ui.mes || primerDiaMes(ahora().fecha)); toast('PDF guardado en tu teléfono.'); return false; },
   sem: ({ d, ui }) => { ui.semana = sumarDias(ui.semana || lunesDe(ahora().fecha), Number(d.d)); return false; },
   'cerrar-semana': async ({ st, ui }) => {
     const lunes = ui.semana || lunesDe(ahora().fecha), ult = S.ultimoCierre(st, lunes);

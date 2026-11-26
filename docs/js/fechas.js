@@ -27,4 +27,10 @@ export const lunesDe = f => sumarDias(f, -diaSemana(f));
 export const fechaCorta = f => `${f.slice(8, 10)}/${f.slice(5, 7)}`;
 export const fechaCompleta = f => `${f.slice(8, 10)}/${f.slice(5, 7)}/${f.slice(0, 4)}`;
 export const fechaLarga = f => `${DIAS_LARGOS[diaSemana(f)].toLowerCase()} ${Number(f.slice(8, 10))} de ${MESES[Number(f.slice(5, 7)) - 1]}`;
+// ---- meses: se identifican por su primer día ('AAAA-MM-01') ----
+export const primerDiaMes = f => f.slice(0, 7) + '-01';
+export function sumarMeses(mes, n) { const [y, m] = mes.split('-').map(Number); return new Date(Date.UTC(y, m - 1 + n, 1)).toISOString().slice(0, 10); }
+export const ultimoDiaMes = mes => sumarDias(sumarMeses(mes, 1), -1);
+export const nombreMes = mes => `${MESES[Number(mes.slice(5, 7)) - 1]} de ${mes.slice(0, 4)}`;
+export const rangoCorto = (a, b) => `${Number(a.slice(8, 10))}/${a.slice(5, 7)} al ${Number(b.slice(8, 10))}/${b.slice(5, 7)}`;
 export const rangoSemana = l => `${fechaCorta(l)} al ${fechaCorta(sumarDias(l, 6))}`;

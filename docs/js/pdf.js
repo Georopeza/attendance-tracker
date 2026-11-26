@@ -1,6 +1,6 @@
 // Reporte semanal en PDF (se genera en el teléfono, sin internet). Usa jsPDF + autoTable (carpeta vendor/).
 import { hTxt, deMin } from './horas.js';
-import { ahora, DIAS_LARGOS, diaSemana, fechaCompleta, fechaCorta, sumarDias } from './fechas.js';
+import { ahora, DIAS_LARGOS, diaSemana, fechaCompleta, fechaCorta, sumarDias, ultimoDiaMes, nombreMes, rangoCorto } from './fechas.js';
 import * as S from './servicios.js';
 
 const AZUL = [31, 58, 95], GRIS = [102, 112, 133], SUAVE = [238, 241, 246], VIOLETA_BG = [236, 226, 255], AMBAR = [253, 235, 198];
@@ -90,6 +90,67 @@ export function generarPdf(st, lunes) {
   return { blob: doc.output('blob'), nombre: `horas-semana-${lunes}.pdf` };
 }
 
+export function generarPdfMes(st, mes) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const M = 15, ANCHO = 210 - 2 * M, ALTO = 297, fin = ultimoDiaMes(mes);
+  const { filas } = S.resumenMes(st, mes);
+  const a = ahora(), generado = `${fechaCompleta(a.fecha)} ${deMin(a.min)}`;
+  const org = (st.ajustes && st.ajustes.organizacion) || '', desc = (st.ajustes && st.ajustes.descripcion) || '';
+  if (org || desc) doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(...GRIS).text(doc.splitTextToSize([org, desc].filter(Boolean).join(' · '), ANCHO)[0], M, 13);
+  doc.setFont('helvetica', 'bold').setFontSize(18).setTextColor(...AZUL).text('Resumen mensual de horas', M, 21);
+  doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(...GRIS).text(`Mes de ${nombreMes(mes)} · del ${fechaCompleta(mes)} al ${fechaCompleta(fin)}`, M, 27);
+
+  const sum = c => filas.reduce((s, f) => s + f[c], 0);
+  doc.autoTable({
+    startY: 32, margin: { left: M, right: M }, theme: 'grid',
+    head: [['Persona', 'Días', 'Normales', 'Extra tras turno', 'Extra día sin turno', 'Total']],
+    body: filas.map(f => [f.emp.nombre, String(f.dias), hTxt(f.normales), hTxt(f.extraTurno), hTxt(f.extraSinTurno), hTxt(f.total) + (f.porRevisar ? '*' : '')]),
+    foot: [['Total del equipo', String(sum('dias')), hTxt(sum('normales')), hTxt(sum('extraTurno')), hTxt(sum('extraSinTurno')), hTxt(sum('total'))]],
+    styles: { fontSize: 9, cellPadding: 2.2, lineColor: [201, 209, 220], lineWidth: 0.2 },
+    headStyles: { fillColor: AZUL, textColor: 255, halign: 'center' }, footStyles: { fillColor: SUAVE, textColor: 0, fontStyle: 'bold' },
+    columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right', textColor: TEAL }, 3: { halign: 'right', textColor: AZ }, 4: { halign: 'right', textColor: VIOLETA }, 5: { halign: 'right', fontStyle: 'bold' } },
+    didParseCell: h => { if (h.section === 'foot' && h.column.index >= 1) h.cell.styles.halign = 'right'; },
+  });
+  let y = doc.lastAutoTable.finalY + 8;
+  doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(...GRIS).text('Criterios', M, y);
+  doc.setFont('helvetica', 'normal');
+  const notas = [...NOTAS, 'Se suman los días del mes, del 1 al último. Una semana que cruza dos meses se reparte según la fecha de cada día.'];
+  for (const n of notas) { y += 4; doc.text(doc.splitTextToSize('• ' + n, ANCHO), M, y); if (n.length > 120) y += 3.5; }
+
+  y += 10;
+  doc.setFont('helvetica', 'bold').setFontSize(14).setTextColor(...AZUL).text('Detalle por persona, semana por semana', M, y);
+  y += 4;
+  for (const f of filas) {
+    const semanas = S.semanasDelMes(st, f.emp.id, mes).filter(w => w.dias > 0);
+    if (y + 12 + (semanas.length + 2) * 7.5 > ALTO - 22) { doc.addPage(); y = 18; }
+    doc.setFont('helvetica', 'bold').setFontSize(11).setTextColor(...AZUL).text(f.emp.nombre, M, y + 4);
+    doc.autoTable({
+      startY: y + 7, margin: { left: M, right: M }, theme: 'grid',
+      head: [['Semana', 'Días', 'Normales', 'Extra tras turno', 'Extra sin turno', 'Total']],
+      body: semanas.length ? semanas.map(w => [`${rangoCorto(w.desde, w.hasta)}${w.completa ? '' : ' (parcial)'}`, String(w.dias), hTxt(w.normales), hTxt(w.extraTurno), hTxt(w.extraSinTurno), hTxt(w.total) + (w.porRevisar ? '*' : '')]) : [['Sin asistencia en el mes', '', '', '', '', '']],
+      foot: [['Total del mes', String(f.dias), hTxt(f.normales), hTxt(f.extraTurno), hTxt(f.extraSinTurno), hTxt(f.total)]],
+      styles: { fontSize: 8.5, cellPadding: 1.8, lineColor: [201, 209, 220], lineWidth: 0.2 },
+      headStyles: { fillColor: AZUL, textColor: 255, fontSize: 8 }, footStyles: { fillColor: SUAVE, textColor: 0, fontStyle: 'bold' },
+      columnStyles: { 0: { cellWidth: 52 }, 1: { halign: 'right', cellWidth: 12 }, 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right', fontStyle: 'bold' } },
+      didParseCell: h => { if (h.section === 'foot' && h.column.index >= 1) h.cell.styles.halign = 'right'; },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+  if (y + 40 > ALTO - 20) { doc.addPage(); y = 20; }
+  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(...GRIS).text('* Hay días con minutos entre 16 y 44 sin redondear: la coordinación decide cómo contarlos.', M, y);
+  y += 22;
+  doc.setDrawColor(120).line(M, y, M + 70, y).line(M + 95, y, M + 165, y);
+  doc.text('Responsable', M, y + 5); doc.text('Fecha de entrega', M + 95, y + 5);
+  const n = doc.getNumberOfPages();
+  for (let i = 1; i <= n; i++) {
+    doc.setPage(i).setFontSize(7.5).setTextColor(...GRIS);
+    doc.text(`${org || 'Control de asistencia'} · ${nombreMes(mes)} · Generado el ${generado}`, M, 290);
+    doc.text(`Página ${i} de ${n}`, 210 - M, 290, { align: 'right' });
+  }
+  return { blob: doc.output('blob'), nombre: `horas-mes-${mes.slice(0, 7)}.pdf` };
+}
+
 export function descargarBlob(blob, nombre) {
   const url = URL.createObjectURL(blob), a = document.createElement('a');
   a.href = url; a.download = nombre; document.body.appendChild(a); a.click(); a.remove();
@@ -107,5 +168,7 @@ async function compartirBlob(blob, nombre, titulo) {
   descargarBlob(blob, nombre);
   return 'descargado';
 }
+export const descargarPdfMes = (st, mes) => { const { blob, nombre } = generarPdfMes(st, mes); descargarBlob(blob, nombre); };
+export const compartirPdfMes = async (st, mes) => { const { blob, nombre } = generarPdfMes(st, mes); return compartirBlob(blob, nombre, 'Resumen mensual de horas'); };
 export const compartirPdf = async (st, lunes) => { const { blob, nombre } = generarPdf(st, lunes); return compartirBlob(blob, nombre, 'Resumen semanal de horas'); };
 export const compartirArchivo = (texto, nombre, tipo, titulo) => compartirBlob(new Blob([texto], { type: tipo }), nombre, titulo);

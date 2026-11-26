@@ -100,6 +100,11 @@ Ejemplos de referencia (turno 9:00–16:00):
 
 ## 10. Reportes
 
+**Resumen mensual** (hecho): pestaña Mes junto a Semana. Suma los días del 1 al último de cada mes (una semana que
+cruza dos meses se reparte según la fecha de cada día), con total por persona, desglose semana por semana y PDF.
+**Cada semana empieza siempre en cero**; el mes acumula aparte, y lo de una semana nunca se arrastra a la siguiente.
+
+
 **Reporte semanal para entregar** (para que el ente superior gestione los pagos; el reporte solo lleva horas):
 resumen del equipo (días, normales, extra tras turno, extra de día sin turno, total) y, por empleado,
 cada día con sus **horas de entrada y salida**, el desglose y el total de la semana. Excel con hoja

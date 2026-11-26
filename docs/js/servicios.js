@@ -1,6 +1,6 @@
 // Consultas sobre los datos (solo lectura). Reciben el estado `st`.
 import { calcularDia, aMin } from './horas.js';
-import { ahora, diaSemana, lunesDe, sumarDias } from './fechas.js';
+import { ahora, diaSemana, lunesDe, sumarDias, ultimoDiaMes } from './fechas.js';
 
 export const empleadosActivos = st => st.empleados.filter(e => !e.archivado);
 export const empleado = (st, id) => st.empleados.find(e => e.id === id);
@@ -54,6 +54,39 @@ export function resumenSemana(st, lunes) {
   const promedio = filas.length ? Math.round(filas.reduce((s, f) => s + f.total, 0) / filas.length) : 0;
   filas.forEach(f => { f.vs = f.total - promedio; });
   return { filas, promedio };
+}
+
+/** Suma los días de `desde` a `hasta` (inclusive) de una persona. */
+function sumaDias(st, empId, desde, hasta) {
+  const t = { dias: 0, normales: 0, extraTurno: 0, extraSinTurno: 0, total: 0, porRevisar: 0 };
+  for (let f = desde; f <= hasta; f = sumarDias(f, 1)) {
+    const r = resumenDia(st, empId, f);
+    if (r.totalReal) t.dias++;
+    t.normales += r.normales; t.extraTurno += r.extraTurno; t.extraSinTurno += r.extraSinTurno;
+    t.total += r.total; t.porRevisar += r.porRevisar ? 1 : 0;
+  }
+  return t;
+}
+
+/** Resumen de un mes ('AAAA-MM-01'). Se suman los días del 1 al último: una semana que cruza dos meses
+ *  se reparte según la fecha de cada día. Cada semana empieza en cero; aquí se acumula todo el mes. */
+export function resumenMes(st, mes) {
+  const fin = ultimoDiaMes(mes);
+  const filas = empleadosActivos(st).map(emp => ({ emp, ...sumaDias(st, emp.id, mes, fin) }));
+  const promedio = filas.length ? Math.round(filas.reduce((s, f) => s + f.total, 0) / filas.length) : 0;
+  filas.forEach(f => { f.vs = f.total - promedio; });
+  return { filas, promedio };
+}
+
+/** El mes de una persona partido por semanas (la primera y la última pueden ser parciales). */
+export function semanasDelMes(st, empId, mes) {
+  const fin = ultimoDiaMes(mes), semanas = [];
+  for (let f = mes; f <= fin;) {
+    const lunes = lunesDe(f), domingo = sumarDias(lunes, 6), hasta = domingo < fin ? domingo : fin;
+    semanas.push({ lunes, desde: f, hasta, completa: f === lunes && hasta === domingo, ...sumaDias(st, empId, f, hasta) });
+    f = sumarDias(hasta, 1);
+  }
+  return semanas;
 }
 
 export function desgloseSemana(st, empId, lunes) {
