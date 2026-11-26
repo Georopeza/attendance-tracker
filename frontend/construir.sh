@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Regenera static/css/app.css después de cambiar clases en las plantillas.
+# Regenera docs/css/app.css después de cambiar clases en docs/js o docs/index.html.
 set -o errexit
 cd "$(dirname "$0")/.."
-npx --yes tailwindcss@3.4.17 -c frontend/tailwind.config.js -i frontend/entrada.css -o static/css/app.css --minify
+npx --yes tailwindcss@3.4.17 -c frontend/tailwind.config.js -i frontend/entrada.css -o docs/css/app.css --minify

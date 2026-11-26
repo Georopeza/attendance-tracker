@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calcularDia, redondear, hhmm } from '../app/js/horas.js';
+import { calcularDia, redondear, hhmm } from '../docs/js/horas.js';
 
 const m = (h, mi = 0) => h * 60 + mi;
 const GENERAL = [{ inicio: m(9), fin: m(16) }];

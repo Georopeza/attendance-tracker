@@ -1,44 +1,40 @@
-# Sala Tricolor
+# Control de Asistencia
 
-> **Versión vigente: app para el celular en [`app/`](app/LEEME.md)** (funciona sin internet, datos en el teléfono, PDF semanal).
-> El proyecto Django de este repositorio es la primera versión y queda como referencia.
+Aplicación para el celular que lleva la **asistencia y las horas** de un equipo, y genera un **PDF semanal**
+con la entrada, la salida y el total de cada persona. Pensada para que **una sola persona** la use de forma
+rápida y sencilla. Sirve para cualquier grupo: un salón, un taller, una escuela, voluntarios…
 
-Control de asistencia y horas para la coordinación. No maneja pagos: solo horas.
+- **Funciona sin internet** y se instala como una app (Android e iPhone).
+- **Tus datos se quedan en tu teléfono.** No hay servidor, ni cuentas, ni envío de datos a ningún lado.
+- **No maneja pagos:** solo horas. El PDF se comparte con quien las gestione.
 
-> **Estado: etapa 1 implementada** (ver `docs/ETAPA_1.md`). Falta el despliegue en la nube, el
-> panel de equilibrio y la sugerencia (etapa 2), y el cierre de semana, Excel y PDF (etapa 3).
-> Documentación: `docs/REQUISITOS.md`, `docs/PLAN.md` y la maqueta en `docs/maqueta/maquetas.html`.
+## Qué hace
+- **Hoy:** marcar *Entró / Salió / Volvió* con un toque, o llenar el día al final con una lista. Marcación en bloque.
+- **Semana:** total por persona (normales, extra, días asistidos), desglose día por día, promedio del equipo,
+  cierre de semana con versiones y corrección de días con motivo.
+- **Horas:** dentro del turno son normales; después del fin del turno, extra; sin turno, todo es extra.
+  El total del día se redondea a 15 minutos (los casos intermedios se marcan *por revisar*).
+- **Personas, turnos y disponibilidad** (con vigencias por fecha), y una **sugerencia** de quién debería venir
+  según las horas de la semana, con registro de a quién se avisó.
+- **Copia de seguridad** en un archivo, **ajustes** (nombre y zona horaria) y **PDF** para compartir.
+
+## Usarla
+Abre la dirección publicada en el teléfono y elige **Agregar a pantalla de inicio**
+(Chrome en Android; Safari → Compartir en iPhone). Después abre la app desde su ícono.
 
 ## Estructura
-
-| App | Contenido |
+| Carpeta | Contenido |
 |---|---|
-| `asistencia/horas.py` | Cálculo de horas del día (módulo puro, sin base de datos) |
-| `asistencia/` | Tramos de entrada/salida, pantalla **Hoy**, resumen semanal, desglose y corrección de día |
-| `turnos/` | Turno (molde) y excepciones por fecha |
-| `disponibilidad/` | Franjas por empleado y día, cuadrícula del equipo |
-| `personal/` | Empleados (se archivan, no se eliminan) |
-| `cuentas/` | Accesos de los coordinadores |
-| `bitacora/` | Registro de quién cambió qué, antes y después, con motivo |
+| [`docs/`](docs/LEEME.md) | La app (sitio estático que publica GitHub Pages) |
+| `pruebas/` | Pruebas de la lógica y una prueba de punta a punta en un celular simulado |
+| `frontend/` | Compilación de los estilos |
+| `documentacion/` | Requisitos, plan y decisiones |
+| `legado-django/` | Primera versión (computador/nube), solo como referencia |
 
-## Reglas de horas (`asistencia/horas.py`)
-
-- Dentro del turno: normales. Después del fin del turno: extra. Antes del inicio: no cuenta.
-- Día sin turno (p. ej. sábado/domingo): todo es extra de día sin turno.
-- Redondeo sobre el total del día: 0–15 min baja, 45–59 sube, 16–44 queda exacto y se marca *por revisar*.
-- Horas guardadas en UTC, mostradas en hora de Venezuela (`America/Caracas`).
-
-## Cómo probarlo en local
-
+## Desarrollo
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py cargar_ejemplo          # 6 empleados de ejemplo
-python manage.py createsuperuser         # tu usuario de coordinador
-python manage.py runserver
-pytest                                   # pruebas
+node --test pruebas/*.test.js            # lógica
+cd docs && python3 -m http.server 8780   # servir la app; luego: node pruebas/e2e-movil.cjs
+frontend/construir.sh                    # recompilar estilos tras cambiar clases
 ```
-
-En la nube: definir `DATABASE_URL` (PostgreSQL), `SECRET_KEY`, `DEBUG=0`, `ALLOWED_HOSTS`
-y `CSRF_TRUSTED_ORIGINS`.
+Al cambiar archivos de la app, sube la `VERSION` de `docs/sw.js` para que los teléfonos se actualicen.

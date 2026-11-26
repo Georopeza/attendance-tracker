@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { estadoInicial } from '../app/js/store.js';
-import { fijarReloj, lunesDe, sumarDias, diaSemana } from '../app/js/fechas.js';
-import * as A from '../app/js/acciones.js';
-import * as S from '../app/js/servicios.js';
-import { datosEjemplo } from '../app/js/ejemplo.js';
+import { estadoInicial } from '../docs/js/store.js';
+import { fijarReloj, fijarZona, ahora, lunesDe, sumarDias, diaSemana } from '../docs/js/fechas.js';
+import * as A from '../docs/js/acciones.js';
+import * as S from '../docs/js/servicios.js';
+import { datosEjemplo } from '../docs/js/ejemplo.js';
 
 const HOY = '2026-11-26'; // jueves
 const reloj = (min, fecha = HOY) => fijarReloj({ fecha, min });
@@ -163,4 +163,28 @@ test('un tramo abierto de un día pasado no suma hasta cerrarse', () => {
   assert.equal(S.resumenDia(st, ana, '2026-11-23').total, 0);
   st.tramos.push({ id: 906, empId: ana, fecha: HOY, entrada: 540, salida: null });
   assert.equal(S.resumenDia(st, ana, HOY).totalReal, 360);                      // hoy cuenta hasta ahora
+});
+
+test('ajustes: nombre, zona válida e inválida', () => {
+  const st = nuevo('Ana');
+  assert.ok(A.guardarAjustes(st, { organizacion: '  Mi grupo ', zona: 'America/Bogota' }).ok);
+  assert.deepEqual(st.ajustes, { organizacion: 'Mi grupo', zona: 'America/Bogota' });
+  assert.match(A.guardarAjustes(st, { organizacion: '', zona: 'Marte/Olimpo' }).error, /zona/);
+  assert.equal(st.ajustes.zona, 'America/Bogota');              // lo inválido no se guardó
+  assert.ok(A.guardarAjustes(st, { organizacion: '', zona: '' }).ok);   // '' = la del teléfono
+});
+
+test('"ahora" usa la zona elegida y no una fija', () => {
+  fijarReloj(null);
+  fijarZona('Asia/Tokyo'); const t = ahora();
+  fijarZona('Pacific/Honolulu'); const h = ahora();
+  fijarZona('');
+  assert.match(t.fecha, /^\d{4}-\d{2}-\d{2}$/);
+  assert.notEqual(t.min, h.min);                                // 19 horas de diferencia entre ambas zonas
+});
+
+test('copias antiguas y datos incompletos se completan al importar', () => {
+  const viejo = JSON.stringify({ app: 'sala-tricolor', datos: { v: 1, empleados: [], tramos: [], turnos: [] } });
+  const r = A.importarCopia(viejo);
+  assert.ok(r.ok); assert.deepEqual(r.datos.ajustes, { organizacion: '', zona: '' }); assert.ok(Array.isArray(r.datos.excepciones));
 });

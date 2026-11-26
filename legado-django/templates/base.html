@@ -1,0 +1,32 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Control de asistencia{% endblock %}</title>
+  {# Estilos (Tailwind compilado con frontend/construir.sh) y HTMX se sirven desde el propio sitio. #}
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script src="{% static 'js/htmx.min.js' %}" defer></script>
+</head>
+<body class="bg-slate-50 text-slate-900" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  <header class="bg-white border-b">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+      <a href="{% url 'hoy' %}" class="flex items-center gap-2 font-bold">
+        <span class="inline-flex flex-col w-6 h-5 rounded-sm overflow-hidden border"><i class="flex-1 bg-yellow-400"></i><i class="flex-1 bg-blue-800"></i><i class="flex-1 bg-red-600"></i></span>
+        Control de asistencia</a>
+      {% if user.is_authenticated %}
+      <nav class="flex gap-x-4 gap-y-1 text-sm flex-wrap items-center">
+        <a href="{% url 'hoy' %}" class="font-semibold">Hoy</a>
+        <a href="{% url 'semana' %}" class="font-semibold">Semana</a>
+        <a href="{% url 'configuracion' %}">Configuración</a>
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="text-slate-500">Salir ({{ user.username }})</button></form>
+      </nav>
+      {% endif %}
+    </div>
+  </header>
+  <main class="max-w-6xl mx-auto px-4 py-6">
+    {% for m in messages %}<div class="mb-4 rounded-lg px-4 py-2 text-sm {% if m.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-teal-100 text-teal-800{% endif %}">{{ m }}</div>{% endfor %}
+    {% block contenido %}{% endblock %}
+  </main>
+</body>
+</html>
