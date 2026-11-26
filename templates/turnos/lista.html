@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block contenido %}
+<div class="flex justify-between items-center flex-wrap gap-2 mb-2">
+  <div><h1 class="text-xl font-semibold">Turnos</h1>
+  <p class="text-sm text-slate-500 max-w-2xl">El turno es el molde con el que se miden las horas; no se asigna a personas. Dentro del turno son horas normales, después del fin son extra, y un día sin turno es todo extra.</p></div>
+  <a href="{% url 'turno_nuevo' %}" class="bg-blue-700 text-white rounded px-3 py-2 text-sm">Nuevo turno</a>
+</div>
+<div class="grid gap-4 lg:grid-cols-2 mt-4">
+  <section class="bg-white border rounded-lg p-4"><h2 class="font-semibold mb-2">Turnos</h2>
+    <table class="w-full text-sm"><thead class="text-left text-xs uppercase text-slate-500"><tr><th>Nombre</th><th>Horario</th><th>Rige</th><th></th></tr></thead><tbody>
+    {% for t in turnos %}<tr class="border-t {% if t.vigente_hasta %}opacity-60{% endif %}">
+      <td class="py-2 font-medium">{{ t.nombre }}</td><td>{{ t.inicio|time:"H:i" }}–{{ t.fin|time:"H:i" }}</td>
+      <td class="text-xs">{% if t.vigente_desde %}desde {{ t.vigente_desde|date:"d/m/Y" }}{% else %}desde siempre{% endif %}{% if t.vigente_hasta %}<br>hasta {{ t.vigente_hasta|date:"d/m/Y" }}{% endif %}</td>
+      <td class="text-right whitespace-nowrap">{% if not t.vigente_hasta %}<a class="border rounded px-2 py-0.5" href="{% url 'turno_cambiar' t.pk %}">Cambiar horario</a>
+        <a class="border border-red-300 text-red-700 rounded px-2 py-0.5" href="{% url 'turno_baja' t.pk %}">Dar de baja</a>{% else %}<span class="text-xs">Anterior</span>{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="4" class="py-3 text-slate-500">Sin turnos: todo se contará como extra de día sin turno.</td></tr>{% endfor %}
+    </tbody></table>
+    <p class="text-xs text-slate-500 mt-2">Cambiar un horario crea una versión nueva desde la fecha elegida; las semanas anteriores no se alteran.</p>
+  </section>
+  <section class="bg-white border rounded-lg p-4"><h2 class="font-semibold mb-2">Calendario semanal</h2>
+    <table class="w-full text-sm"><tbody>
+    {% for dia, ts in calendario %}<tr class="border-t"><td class="py-1.5">{{ dia }}</td><td>
+      {% for t in ts %}<span class="text-xs rounded-full px-2 py-0.5 bg-blue-100 text-blue-800">{{ t.nombre }} {{ t.inicio|time:"H:i" }}–{{ t.fin|time:"H:i" }}</span> {% empty %}<span class="text-xs rounded-full px-2 py-0.5 bg-violet-100 text-violet-800">Sin turno · todo es extra</span>{% endfor %}</td></tr>{% endfor %}
+    </tbody></table>
+  </section>
+  <section class="bg-white border rounded-lg p-4 lg:col-span-2"><div class="flex justify-between items-center mb-2"><h2 class="font-semibold">Excepciones por fecha</h2>
+    <a href="{% url 'excepcion_nueva' %}" class="border rounded px-2 py-1 text-sm">Agregar excepción</a></div>
+    <table class="w-full text-sm"><tbody>
+    {% for e in excepciones %}<tr class="border-t"><td class="py-1.5">{{ e.fecha|date:"D d/m/Y" }}</td>
+      <td>{% if e.turno %}{{ e.turno.nombre }} {{ e.inicio|default:e.turno.inicio|time:"H:i" }}–{{ e.fin|default:e.turno.fin|time:"H:i" }}{% else %}Sin turno ese día{% endif %}</td>
+      <td class="text-right"><a class="text-red-700 underline" href="{% url 'excepcion_eliminar' e.pk %}">Eliminar</a></td></tr>
+    {% empty %}<tr><td class="py-2 text-slate-500">Sin excepciones. Sirven para un día con turno hasta las 16:30, o para definir un sábado con turno.</td></tr>{% endfor %}
+    </tbody></table></section>
+</div>
+{% endblock %}

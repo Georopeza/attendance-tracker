@@ -2,9 +2,9 @@
 
 Control de asistencia y horas para la coordinación. No maneja pagos: solo horas.
 
-> **Estado: esqueleto.** Muestra cómo se implementarán las pantallas y el cálculo de horas.
-> Falta para la versión final: CRUD completo de empleados y turnos en pantallas propias,
-> ficha de disponibilidad editable, marcación en bloque, cierre de semana, Excel/PDF y despliegue.
+> **Estado: etapa 1 implementada** (ver `docs/ETAPA_1.md`). Falta el despliegue en la nube, el
+> panel de equilibrio y la sugerencia (etapa 2), y el cierre de semana, Excel y PDF (etapa 3).
+> Documentación: `docs/REQUISITOS.md`, `docs/PLAN.md` y la maqueta en `docs/maqueta/maquetas.html`.
 
 ## Estructura
 
@@ -15,6 +15,7 @@ Control de asistencia y horas para la coordinación. No maneja pagos: solo horas
 | `turnos/` | Turno (molde) y excepciones por fecha |
 | `disponibilidad/` | Franjas por empleado y día, cuadrícula del equipo |
 | `personal/` | Empleados (se archivan, no se eliminan) |
+| `cuentas/` | Accesos de los coordinadores |
 | `bitacora/` | Registro de quién cambió qué, antes y después, con motivo |
 
 ## Reglas de horas (`asistencia/horas.py`)

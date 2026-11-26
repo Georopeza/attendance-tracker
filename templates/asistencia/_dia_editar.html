@@ -1,12 +1,6 @@
 <form class="border rounded-lg p-3 bg-slate-50 space-y-2 text-sm"
       hx-post="{% url 'dia_editar' emp.pk fecha|date:'Y-m-d' %}" hx-target="closest section" hx-swap="outerHTML">
   <b>Corregir {{ emp.nombre }} · {{ fecha|date:"l j M" }}</b>
-  {% if error %}<p class="text-red-700">{{ error }}</p>{% endif %}
-  {% for t in tramos %}
-  <div class="flex gap-2 items-center">
-    <input type="time" name="entrada_{{ t.pk }}" value="{{ t.entrada|time:'H:i' }}" class="border rounded px-1">
-    a <input type="time" name="salida_{{ t.pk }}" value="{% if t.salida %}{{ t.salida|time:'H:i' }}{% endif %}" class="border rounded px-1">
-  </div>{% endfor %}
-  <input name="motivo" placeholder="Motivo (queda en la bitácora)" class="border rounded px-2 py-1 w-full">
+  {% include "asistencia/_dia_campos.html" %}
   <button class="bg-blue-700 text-white rounded px-3 py-1">Guardar corrección</button>
 </form>

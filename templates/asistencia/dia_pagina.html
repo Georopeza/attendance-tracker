@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% load horas_tags %}
+{% block contenido %}
+<a href="/?fecha={{ fecha|date:'Y-m-d' }}" class="text-sm underline">← Volver al día</a>
+<h1 class="text-xl font-semibold mt-1">Corregir a {{ emp.nombre }} · {{ fecha|date:"l j \d\e F" }}</h1>
+<p class="text-sm text-slate-500 mb-3">Total actual del día: <b>{{ resumen.total|horas }}</b>. Cada cambio queda en la bitácora.</p>
+<form method="post" class="bg-white border rounded-lg p-4 space-y-2 text-sm max-w-xl">
+  {% csrf_token %}{% include "asistencia/_dia_campos.html" %}
+  <button class="bg-blue-700 text-white rounded px-4 py-2">Guardar corrección</button>
+</form>
+{% endblock %}

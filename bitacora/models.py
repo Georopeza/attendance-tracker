@@ -24,3 +24,8 @@ def registrar(usuario, entidad, objeto_id, accion, antes=None, despues=None, mot
         entidad=entidad, objeto_id=objeto_id, accion=accion,
         antes=antes, despues=despues, motivo=motivo,
     )
+
+
+def foto(obj, *campos):
+    """Valores de un objeto como texto, para guardar el 'antes' y el 'después'."""
+    return {c: (None if getattr(obj, c) is None else str(getattr(obj, c))) for c in campos}

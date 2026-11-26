@@ -1,0 +1,10 @@
+{% if error %}<p class="text-red-700">{{ error }}</p>{% endif %}
+{% for t in tramos %}
+<div class="flex gap-2 items-center flex-wrap">
+  <input type="time" name="entrada_{{ t.pk }}" value="{{ t.entrada|time:'H:i' }}" class="border rounded px-1" required>
+  a <input type="time" name="salida_{{ t.pk }}" value="{% if t.salida %}{{ t.salida|time:'H:i' }}{% endif %}" class="border rounded px-1">
+  <label class="text-xs text-red-700"><input type="checkbox" name="borrar_{{ t.pk }}"> quitar este tramo</label>
+</div>{% empty %}<p class="text-slate-500">No hay tramos este día.</p>{% endfor %}
+<div class="flex gap-2 items-center flex-wrap"><span class="text-slate-500">Agregar tramo:</span>
+  <input type="time" name="entrada_nuevo" class="border rounded px-1"> a <input type="time" name="salida_nuevo" class="border rounded px-1"></div>
+<input name="motivo" placeholder="Motivo (queda en la bitácora)" class="border rounded px-2 py-1 w-full">

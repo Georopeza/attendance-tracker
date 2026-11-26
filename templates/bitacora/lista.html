@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block contenido %}
+<div class="flex justify-between items-center flex-wrap gap-2 mb-3">
+  <div><h1 class="text-xl font-semibold">Bitácora de cambios</h1><p class="text-sm text-slate-500">Quién cambió qué, cuándo, y cómo estaba antes. Solo se consulta.</p></div>
+  <form class="text-sm flex gap-2"><select name="entidad" class="border rounded px-2 py-1" onchange="this.form.submit()"><option value="">Todo</option>{% for e in entidades %}<option {% if e == entidad %}selected{% endif %}>{{ e }}</option>{% endfor %}</select></form>
+</div>
+<div class="bg-white border rounded-lg overflow-x-auto"><table class="w-full text-sm">
+  <thead class="bg-slate-100 text-left text-xs uppercase text-slate-500"><tr><th class="p-2">Cuándo</th><th class="p-2">Quién</th><th class="p-2">Qué</th><th class="p-2">Antes</th><th class="p-2">Después</th><th class="p-2">Motivo</th></tr></thead>
+  <tbody>{% for r in pagina %}<tr class="border-t align-top">
+    <td class="p-2 whitespace-nowrap">{{ r.creado|date:"d/m/Y H:i" }}</td><td class="p-2">{{ r.usuario.username|default:"—" }}</td>
+    <td class="p-2"><b>{{ r.accion }}</b><br><span class="text-xs text-slate-500">{{ r.entidad }} #{{ r.objeto_id }}</span></td>
+    <td class="p-2 text-xs font-mono break-all">{{ r.antes|default_if_none:"—" }}</td><td class="p-2 text-xs font-mono break-all">{{ r.despues|default_if_none:"—" }}</td>
+    <td class="p-2">{{ r.motivo }}</td></tr>
+  {% empty %}<tr><td colspan="6" class="p-4 text-slate-500">Aún no hay cambios registrados.</td></tr>{% endfor %}</tbody></table></div>
+<div class="flex gap-3 text-sm mt-3">{% if pagina.has_previous %}<a class="underline" href="?p={{ pagina.previous_page_number }}&entidad={{ entidad }}">← Más recientes</a>{% endif %}
+{% if pagina.has_next %}<a class="underline" href="?p={{ pagina.next_page_number }}&entidad={{ entidad }}">Más antiguos →</a>{% endif %}</div>
+{% endblock %}

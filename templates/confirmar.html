@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block contenido %}
+<form method="post" class="max-w-lg mx-auto bg-white border border-red-300 rounded-lg p-5 space-y-3">
+  {% csrf_token %}
+  <h1 class="text-lg font-semibold">{{ titulo }}</h1>
+  <p class="text-sm text-slate-700">{{ mensaje }}</p>
+  {% if pide_motivo %}<input name="motivo" placeholder="Motivo (opcional, queda en la bitácora)" class="border rounded px-2 py-1 w-full">{% endif %}
+  <div class="flex gap-2">
+    <button class="bg-red-700 text-white rounded px-4 py-2">{{ boton }}</button>
+    <a href="{{ cancelar }}" class="border rounded px-4 py-2">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

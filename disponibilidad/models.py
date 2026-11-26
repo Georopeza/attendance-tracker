@@ -19,6 +19,8 @@ class Disponibilidad(models.Model):
         ordering = ["empleado", "dia", "desde"]
 
     def clean(self):
+        if not self.empleado_id or self.desde is None or self.hasta is None:
+            return  # el formulario completa el empleado y la vigencia antes de validar de nuevo
         if self.hasta <= self.desde:
             raise ValidationError("La hora final debe ser posterior a la inicial.")
         cruces = Disponibilidad.objects.filter(

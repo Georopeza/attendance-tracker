@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h1 class="text-xl font-semibold mb-4">{{ titulo }}</h1>
+{% url 'empleados' as volver %}{% include "_formulario.html" with cancelar=volver %}
+{% endblock %}

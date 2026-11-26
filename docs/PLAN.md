@@ -21,7 +21,7 @@ Los totales del día nunca se guardan: se calculan desde los tramos, así una co
 ## Estado
 
 - [x] Esqueleto: modelos, cálculo de horas con pruebas, Hoy, resumen semanal, desglose y corrección de día.
-- [ ] Etapa 1 completa (ver `ETAPA_1.md`).
+- [x] Etapa 1: funcionalidad implementada y con pruebas; falta despliegue (ver `ETAPA_1.md`).
 - [ ] Etapa 2.
 - [ ] Etapa 3.
 

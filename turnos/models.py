@@ -5,6 +5,9 @@ def dias_laborables():
     return [0, 1, 2, 3, 4]
 
 
+DIAS_SEMANA = [(0, "Lunes"), (1, "Martes"), (2, "Miércoles"), (3, "Jueves"), (4, "Viernes"), (5, "Sábado"), (6, "Domingo")]
+
+
 class Turno(models.Model):
     """Molde de horario. No se asigna a personas: solo sirve para medir las horas."""
 
@@ -13,7 +16,14 @@ class Turno(models.Model):
     fin = models.TimeField(default="16:00")
     # Días de la semana en que rige (0 = lunes ... 6 = domingo).
     dias = models.JSONField(default=dias_laborables)
-    activo = models.BooleanField(default=True)
+    # Vigencia: un cambio de horario crea una versión nueva; las semanas pasadas no se alteran.
+    vigente_desde = models.DateField(null=True, blank=True, help_text="Vacío = desde siempre.")
+    vigente_hasta = models.DateField(null=True, blank=True, help_text="Vacío = sin fecha de fin.")
+
+    def rige_en(self, fecha) -> bool:
+        return ((self.vigente_desde is None or self.vigente_desde <= fecha)
+                and (self.vigente_hasta is None or fecha <= self.vigente_hasta)
+                and fecha.weekday() in self.dias)
 
     def __str__(self):
         return f"{self.nombre} {self.inicio:%H:%M}-{self.fin:%H:%M}"

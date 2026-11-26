@@ -1,0 +1,16 @@
+{# Formulario genérico con estilos y errores. Uso: include con form, boton y cancelar. #}
+<form method="post" class="space-y-3 bg-white border rounded-lg p-4 max-w-xl">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  {% for campo in form %}
+  <label class="block text-sm">
+    <span class="text-slate-600">{{ campo.label }}</span>
+    <div class="mt-1 [&_input]:border [&_input]:rounded [&_input]:px-2 [&_input]:py-1 [&_input]:w-full [&_select]:border [&_select]:rounded [&_select]:px-2 [&_select]:py-1 [&_select]:w-full">{{ campo }}</div>
+    {% if campo.help_text %}<span class="text-xs text-slate-500">{{ campo.help_text }}</span>{% endif %}
+    {% for e in campo.errors %}<span class="block text-xs text-red-700">{{ e }}</span>{% endfor %}
+  </label>{% endfor %}
+  <div class="flex gap-2">
+    <button class="bg-blue-700 text-white rounded px-4 py-2">{{ boton|default:"Guardar" }}</button>
+    {% if cancelar %}<a href="{{ cancelar }}" class="border rounded px-4 py-2">Cancelar</a>{% endif %}
+  </div>
+</form>

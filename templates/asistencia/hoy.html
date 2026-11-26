@@ -1,7 +1,29 @@
 {% extends "base.html" %}
 {% block contenido %}
-<h1 class="text-xl font-semibold">Hoy · {{ fecha|date:"l j \d\e F" }}</h1>
-{# Tiempo real: la lista se recarga sola cada 5 s, así se ven las marcas de otros coordinadores. #}
+<div class="flex justify-between items-start flex-wrap gap-3">
+  <div>
+    <h1 class="text-xl font-semibold">{% if es_hoy %}Hoy{% else %}Día{% endif %} · {{ fecha|date:"l j \d\e F \d\e Y" }}</h1>
+    <p class="text-sm text-slate-500">
+      {% for t in turnos %}Turno {{ t.nombre }} {{ t.inicio|time:"H:i" }}–{{ t.fin|time:"H:i" }}{% if not forloop.last %}, {% endif %}{% empty %}<span class="text-violet-700">Día sin turno: todas las horas son extra.</span>{% endfor %}
+      {% if turnos %}· Lo que pasa del fin del turno es extra; antes del inicio no cuenta.{% endif %}</p>
+  </div>
+  <div class="flex gap-2 text-sm items-center">
+    <a class="border rounded px-2 py-1" href="?fecha={{ anterior|date:'Y-m-d' }}">← Día anterior</a>
+    {% if not es_hoy %}<a class="border rounded px-2 py-1" href="{% url 'hoy' %}">Hoy</a>{% endif %}
+    <a class="border rounded px-2 py-1" href="?fecha={{ siguiente|date:'Y-m-d' }}">Día siguiente →</a>
+  </div>
+</div>
+
+{% if es_hoy %}
+<form class="mt-4 bg-slate-100 border border-dashed rounded-lg p-3 flex gap-3 flex-wrap items-end text-sm" hx-target="#tarjetas" hx-swap="innerHTML">
+  <label>Hora<br><input type="time" name="hora" class="border rounded px-2 py-1" placeholder="auto"></label>
+  <button class="border bg-white rounded px-3 py-1.5" hx-post="{% url 'bloque' 'entrada' %}" hx-include="closest form">Los que faltan entraron (9:00 si no pones hora)</button>
+  <button class="border bg-white rounded px-3 py-1.5" hx-post="{% url 'bloque' 'salida' %}" hx-include="closest form">Los presentes salieron (16:00 si no pones hora)</button>
+  <span class="text-xs text-slate-500">Para los días normales; luego se corrigen las excepciones.</span>
+</form>
+{% endif %}
+
 <div id="tarjetas" class="mt-4"
-     hx-get="{% url 'hoy_tarjetas' %}" hx-trigger="load, every 5s" hx-swap="innerHTML"></div>
+     hx-get="{% url 'hoy_tarjetas' %}?fecha={{ fecha|date:'Y-m-d' }}"
+     {% if es_hoy %}hx-trigger="load, every 5s [!document.querySelector('#tarjetas input:focus')]"{% else %}hx-trigger="load"{% endif %} hx-swap="innerHTML"></div>
 {% endblock %}

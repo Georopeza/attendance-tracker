@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block contenido %}
+<div class="flex justify-between items-center flex-wrap gap-2 mb-4">
+  <div><h1 class="text-xl font-semibold">Coordinadores</h1><p class="text-sm text-slate-500">Quienes pueden entrar al sistema. Todos tienen los mismos permisos.</p></div>
+  <a href="{% url 'coordinador_nuevo' %}" class="bg-blue-700 text-white rounded px-3 py-2 text-sm">Nuevo coordinador</a>
+</div>
+<div class="bg-white border rounded-lg overflow-x-auto"><table class="w-full text-sm">
+  <thead class="bg-slate-100 text-left text-xs uppercase text-slate-500"><tr><th class="p-2">Usuario</th><th class="p-2">Estado</th><th class="p-2 text-right"></th></tr></thead>
+  <tbody>{% for u in usuarios %}<tr class="border-t {% if not u.is_active %}opacity-60{% endif %}"><td class="p-2 font-medium">{{ u.username }}{% if u == user %} <span class="text-xs text-slate-500">(tú)</span>{% endif %}</td>
+    <td class="p-2">{% if u.is_active %}Activo{% else %}Desactivado{% endif %}</td>
+    <td class="p-2 text-right"><form method="post" action="{% url 'coordinador_activar' u.pk u.is_active|yesno:'0,1' %}">{% csrf_token %}
+      <button class="border rounded px-2 py-0.5 {% if u.is_active %}text-red-700 border-red-300{% endif %}">{% if u.is_active %}Desactivar{% else %}Reactivar{% endif %}</button></form></td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

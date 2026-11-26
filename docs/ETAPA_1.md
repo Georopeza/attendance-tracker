@@ -13,16 +13,24 @@ verlo en tiempo real y dejar todo en bitácora.
 - [x] Resumen semanal, desglose por empleado y corrección de día (adelantado de la etapa 2).
 - [x] Cuadrícula de disponibilidad (solo lectura).
 
+## Hecho (implementación)
+
+- [x] Menú y navegación; plantilla base con Tailwind y HTMX (por CDN).
+- [x] Empleados: lista, agregar, editar, archivar con confirmación, reactivar, eliminar solo sin horas.
+- [x] Turnos: lista, calendario semanal, excepciones por fecha, cambio de horario con vigencia, baja.
+- [x] Disponibilidad: ficha editable, varias franjas por día, validación de cruces, copiar de otro
+  empleado, nueva vigencia e historial de vigencias.
+- [x] Hoy: marcación en bloque, deshacer, día sin turno, navegar a días pasados, corregir el día
+  (agregar, editar y quitar tramos).
+- [x] Bitácora: pantalla de consulta con filtro por entidad.
+- [x] Coordinadores: crear y desactivar accesos.
+- [x] Preparado para la nube: `Procfile`, `build.sh`, ajustes de seguridad con `DEBUG=0`.
+
 ## Por hacer
 
-- [ ] Menú y diseño final de pantallas (según `docs/maqueta/maquetas.html`).
-- [ ] Empleados: lista, agregar, editar, archivar con confirmación, reactivar.
-- [ ] Turnos: molde, calendario semanal, excepciones por fecha (pantallas propias).
-- [ ] Disponibilidad: ficha editable, varias franjas, copiar de otro empleado, vigencia.
-- [ ] Hoy: marcación en bloque, deshacer, día sin turno, navegar a días pasados.
-- [ ] Bitácora: pantalla de consulta con filtros.
-- [ ] Coordinadores: crear y desactivar accesos.
-- [ ] Despliegue en la nube con HTTPS.
+- [ ] Despliegue en la nube con HTTPS (falta decidir hosting, dominio y usuario inicial).
+- [ ] Revisión visual en celular y ajuste fino del diseño (Tailwind por CDN todavía).
+- [ ] Prueba de dos coordinadores a la vez en dispositivos reales.
 
 ## Criterios de aceptación
 

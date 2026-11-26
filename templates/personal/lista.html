@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block contenido %}
+<div class="flex justify-between items-center flex-wrap gap-2 mb-4">
+  <div><h1 class="text-xl font-semibold">Empleados</h1>
+  <p class="text-sm text-slate-500">Archivar en lugar de eliminar: el historial y los totales entregados se conservan.</p></div>
+  <div class="flex items-center gap-3 text-sm">
+    <a href="?archivados={% if archivados %}0{% else %}1{% endif %}" class="underline">{% if archivados %}Ocultar archivados{% else %}Mostrar archivados{% endif %}</a>
+    <a href="{% url 'empleado_nuevo' %}" class="bg-blue-700 text-white rounded px-3 py-2">Agregar empleado</a>
+  </div>
+</div>
+<div class="bg-white border rounded-lg overflow-x-auto">
+<table class="w-full text-sm">
+  <thead class="bg-slate-100 text-left text-xs uppercase text-slate-500"><tr><th class="p-2">Nombre</th><th class="p-2">Estado</th><th class="p-2 text-right">Acciones</th></tr></thead>
+  <tbody>
+  {% for f in empleados %}{% with e=f.emp %}
+  <tr class="border-t {% if e.archivado %}opacity-60{% endif %}">
+    <td class="p-2 font-medium">{{ e.nombre }}</td>
+    <td class="p-2">{% if e.archivado %}<span class="text-xs rounded-full px-2 py-0.5 bg-slate-200">Archivado</span>{% else %}<span class="text-xs rounded-full px-2 py-0.5 bg-teal-100 text-teal-800">Activo</span>{% endif %}</td>
+    <td class="p-2"><div class="flex gap-2 justify-end">
+      {% if e.archivado %}
+        <form method="post" action="{% url 'empleado_reactivar' e.pk %}">{% csrf_token %}<button class="border rounded px-2 py-0.5">Reactivar</button></form>
+      {% else %}
+        <a class="border rounded px-2 py-0.5" href="{% url 'disponibilidad_ficha' e.pk %}">Disponibilidad</a>
+        <a class="border rounded px-2 py-0.5" href="{% url 'empleado_editar' e.pk %}">Editar</a>
+        <a class="border border-red-300 text-red-700 rounded px-2 py-0.5" href="{% url 'empleado_archivar' e.pk %}">Archivar</a>
+      {% endif %}
+      {% if not f.tiene_horas %}<a class="border border-red-300 text-red-700 rounded px-2 py-0.5" href="{% url 'empleado_eliminar' e.pk %}">Eliminar</a>{% endif %}
+    </div></td>
+  </tr>{% endwith %}
+  {% empty %}<tr><td colspan="3" class="p-4 text-slate-500">Todavía no hay empleados.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+<p class="text-xs text-slate-500 mt-3">"Eliminar" solo aparece para quien no tiene horas registradas (por ejemplo, uno creado por error).</p>
+{% endblock %}

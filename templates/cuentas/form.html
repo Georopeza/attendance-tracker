@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h1 class="text-xl font-semibold mb-1">Nuevo coordinador</h1>
+<p class="text-sm text-slate-500 mb-4">Todos los coordinadores tienen los mismos permisos: ven y editan todo.</p>
+{% url 'coordinadores' as volver %}{% include "_formulario.html" with cancelar=volver boton="Crear acceso" %}
+{% endblock %}
