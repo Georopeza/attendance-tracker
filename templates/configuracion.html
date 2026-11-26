@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h1 class="text-xl font-semibold">Configuración</h1>
+<p class="text-sm text-slate-500 mb-4">Lo que se toca de vez en cuando. El día a día se hace en Hoy.</p>
+<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+  <a href="{% url 'empleados' %}" class="bg-white border rounded-lg p-4 hover:border-blue-700"><b>Empleados</b><p class="text-sm text-slate-500">Agregar, editar o archivar a alguien.</p></a>
+  <a href="{% url 'disponibilidad' %}" class="bg-white border rounded-lg p-4 hover:border-blue-700"><b>Disponibilidad</b><p class="text-sm text-slate-500">Qué días y horas puede venir cada uno.</p></a>
+  <a href="{% url 'turnos' %}" class="bg-white border rounded-lg p-4 hover:border-blue-700"><b>Turnos</b><p class="text-sm text-slate-500">El horario normal y los cambios por fecha.</p></a>
+  <a href="{% url 'bitacora' %}" class="bg-white border rounded-lg p-4 hover:border-blue-700"><b>Bitácora</b><p class="text-sm text-slate-500">Quién cambió qué y cuándo.</p></a>
+  <a href="{% url 'coordinadores' %}" class="bg-white border rounded-lg p-4 hover:border-blue-700"><b>Coordinadores</b><p class="text-sm text-slate-500">Quién puede entrar al sistema.</p></a>
+</div>
+{% endblock %}

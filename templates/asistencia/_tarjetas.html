@@ -1,6 +1,6 @@
 {% if aviso %}<p class="mb-3 text-sm rounded-lg bg-teal-100 text-teal-800 px-3 py-2">{{ aviso }}</p>{% endif %}
 {% if tarjetas %}
-<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-  {% for t in tarjetas %}{% include "asistencia/_tarjeta.html" with emp=t.emp fecha=t.fecha es_hoy=t.es_hoy tramos=t.tramos estado=t.estado resumen=t.resumen error=t.error %}{% endfor %}
+<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 items-start">
+  {% for t in tarjetas %}{% include "asistencia/_tarjeta.html" with emp=t.emp fecha=t.fecha es_hoy=t.es_hoy tramos=t.tramos estado=t.estado resumen=t.resumen error=t.error abierto=t.abierto %}{% endfor %}
 </div>
 {% else %}<p class="text-slate-500">No hay empleados activos. <a class="underline" href="{% url 'empleado_nuevo' %}">Agregar un empleado</a>.</p>{% endif %}

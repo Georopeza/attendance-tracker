@@ -22,6 +22,16 @@ Lee antes de tocar nada: `docs/REQUISITOS.md` (qué se pidió y qué está decid
 - Colores de horas: normales verde azulado, extra tras turno azul, extra día sin turno violeta,
   "por revisar" ámbar.
 
+## Principio de diseño: rápido y simple
+
+El uso diario es **marcar y listo**. La pantalla Hoy es la principal y debe seguir simple:
+- Tarjeta = nombre, estado y un botón grande (Entró / Salió / Volvió). Correcciones, horas y avisos van
+  escondidos en "Detalle y correcciones"; los cálculos se ven en el resumen semanal.
+- Dos formas de marcar, ambas disponibles: **en el momento** (un toque) y **al final del día**
+  (lista con casillas y el horario del turno ya puesto, un solo guardar).
+- Menú mínimo: Hoy, Semana, Configuración. Lo que se toca poco vive en Configuración.
+- No agregar elementos a la tarjeta ni al menú principal sin pedirlo.
+
 ## Comandos
 
 ```bash

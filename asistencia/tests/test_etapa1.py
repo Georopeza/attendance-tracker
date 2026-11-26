@@ -210,3 +210,71 @@ def test_contrasenas_distintas_se_rechazan(client, coordinador):
 def test_todas_las_pantallas_exigen_login(client):
     for url in ["/", "/semana/", "/empleados/", "/turnos/", "/disponibilidad/", "/bitacora/", "/coordinadores/"]:
         assert client.get(url).status_code == 302, url
+
+
+# ---------- Hoy simplificado: modo "al final del día" y tarjeta ----------
+
+def test_tarjeta_muestra_estado_y_boton_simples(client, coordinador, turno):
+    emp = Empleado.objects.create(nombre="Ana")
+    hoy = timezone.localdate()
+    html = client.get("/hoy/tarjetas/").content.decode()
+    assert "Sin llegar" in html and "Entró" in html and "Salió" not in html
+    Tramo.objects.create(empleado=emp, entrada=local(hoy, 9, 2))
+    html = client.get("/hoy/tarjetas/").content.decode()
+    assert "Presente desde 09:02" in html and "Salió" in html
+    Tramo.objects.filter(empleado=emp).update(salida=local(hoy, 12, 0))
+    html = client.get("/hoy/tarjetas/").content.decode()
+    assert "Se fue a las 12:00" in html and "Volvió" in html
+
+
+def test_modo_dia_muestra_horario_del_turno_por_defecto(client, coordinador, turno):
+    Empleado.objects.create(nombre="Ana")
+    html = client.get("/?modo=dia").content.decode()
+    assert 'value="09:00"' in html and 'value="16:00"' in html and "Guardar el día" in html
+
+
+def test_guardar_dia_crea_actualiza_y_quita(client, coordinador, turno):
+    ana, luis, rosa = (Empleado.objects.create(nombre=n) for n in ("Ana", "Luis", "Rosa"))
+    f = un_lunes()
+    Tramo.objects.create(empleado=rosa, entrada=local(f, 9), salida=local(f, 12))
+    r = client.post("/hoy/dia/", {"fecha": str(f),
+        f"vino_{ana.pk}": "on", f"entrada_{ana.pk}": "09:00", f"salida_{ana.pk}": "16:00",
+        f"vino_{luis.pk}": "on", f"entrada_{luis.pk}": "09:00", f"salida_{luis.pk}": "14:00"})
+    assert r.status_code == 302
+    assert services.resumen_dia(ana, f).total == 7 * 60 and services.resumen_dia(luis, f).total == 5 * 60
+    assert not rosa.tramos.exists()                                   # estaba marcada y se desmarcó
+    client.post("/hoy/dia/", {"fecha": str(f), f"vino_ana_{ana.pk}": "x", f"vino_{ana.pk}": "on",
+                              f"entrada_{ana.pk}": "08:00", f"salida_{ana.pk}": "17:00"})
+    assert services.resumen_dia(ana, f).normales == 7 * 60 and services.resumen_dia(ana, f).extra_turno == 60
+    acciones = set(Registro.objects.values_list("accion", flat=True))
+    assert {"marcó el día completo", "quitó la asistencia del día", "ajustó el día completo"} <= acciones
+
+
+def test_guardar_dia_con_error_no_guarda_nada(client, coordinador, turno):
+    ana, luis = Empleado.objects.create(nombre="Ana"), Empleado.objects.create(nombre="Luis")
+    f = un_lunes()
+    r = client.post("/hoy/dia/", {"fecha": str(f),
+        f"vino_{ana.pk}": "on", f"entrada_{ana.pk}": "09:00", f"salida_{ana.pk}": "16:00",
+        f"vino_{luis.pk}": "on", f"entrada_{luis.pk}": "15:00", f"salida_{luis.pk}": "10:00"})
+    html = r.content.decode()
+    assert r.status_code == 200 and "anterior a la entrada" in html
+    assert Tramo.objects.count() == 0                                  # nada se guardó, ni lo de Ana
+    assert 'value="15:00"' in html                                      # el formulario conserva lo escrito
+
+
+def test_guardar_dia_pasado_exige_salida_y_respeta_varios_tramos(client, coordinador, turno):
+    ana, luis = Empleado.objects.create(nombre="Ana"), Empleado.objects.create(nombre="Luis")
+    f = un_lunes()
+    Tramo.objects.create(empleado=luis, entrada=local(f, 8), salida=local(f, 11))
+    Tramo.objects.create(empleado=luis, entrada=local(f, 14), salida=local(f, 16))
+    r = client.post("/hoy/dia/", {"fecha": str(f), f"vino_{ana.pk}": "on", f"entrada_{ana.pk}": "09:00", f"salida_{ana.pk}": ""})
+    assert "Falta la hora de salida" in r.content.decode()
+    client.post("/hoy/dia/", {"fecha": str(f), f"vino_{ana.pk}": "on", f"entrada_{ana.pk}": "09:00", f"salida_{ana.pk}": "16:00"})
+    assert luis.tramos.count() == 2                                    # varios tramos: no se tocan
+
+
+def test_configuracion_y_menu_reducido(client, coordinador):
+    html = client.get("/configuracion/").content.decode()
+    assert all(x in html for x in ("Empleados", "Turnos", "Disponibilidad", "Bitácora", "Coordinadores"))
+    nav = client.get("/").content.decode().split("<nav")[1].split("</nav>")[0]
+    assert "Configuración" in nav and "Empleados" not in nav

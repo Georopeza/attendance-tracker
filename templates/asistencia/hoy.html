@@ -2,28 +2,62 @@
 {% block contenido %}
 <div class="flex justify-between items-start flex-wrap gap-3">
   <div>
-    <h1 class="text-xl font-semibold">{% if es_hoy %}Hoy{% else %}Día{% endif %} · {{ fecha|date:"l j \d\e F \d\e Y" }}</h1>
+    <h1 class="text-xl font-semibold">{% if es_hoy %}Hoy{% else %}Día{% endif %} · {{ fecha|date:"l j \d\e F" }}</h1>
     <p class="text-sm text-slate-500">
-      {% for t in turnos %}Turno {{ t.nombre }} {{ t.inicio|time:"H:i" }}–{{ t.fin|time:"H:i" }}{% if not forloop.last %}, {% endif %}{% empty %}<span class="text-violet-700">Día sin turno: todas las horas son extra.</span>{% endfor %}
-      {% if turnos %}· Lo que pasa del fin del turno es extra; antes del inicio no cuenta.{% endif %}</p>
+      {% for t in turnos %}Turno {{ t.inicio|time:"H:i" }}–{{ t.fin|time:"H:i" }}{% if not forloop.last %}, {% endif %}{% empty %}<span class="text-violet-700">Día sin turno: todo es extra.</span>{% endfor %}</p>
   </div>
   <div class="flex gap-2 text-sm items-center">
-    <a class="border rounded px-2 py-1" href="?fecha={{ anterior|date:'Y-m-d' }}">← Día anterior</a>
-    {% if not es_hoy %}<a class="border rounded px-2 py-1" href="{% url 'hoy' %}">Hoy</a>{% endif %}
-    <a class="border rounded px-2 py-1" href="?fecha={{ siguiente|date:'Y-m-d' }}">Día siguiente →</a>
+    <a class="border rounded px-2 py-1" href="?modo={{ modo }}&fecha={{ anterior|date:'Y-m-d' }}" aria-label="Día anterior">←</a>
+    {% if not es_hoy %}<a class="border rounded px-2 py-1" href="?modo={{ modo }}">Hoy</a>{% endif %}
+    <a class="border rounded px-2 py-1" href="?modo={{ modo }}&fecha={{ siguiente|date:'Y-m-d' }}" aria-label="Día siguiente">→</a>
   </div>
 </div>
 
-{% if es_hoy %}
-<form class="mt-4 bg-slate-100 border border-dashed rounded-lg p-3 flex gap-3 flex-wrap items-end text-sm" hx-target="#tarjetas" hx-swap="innerHTML">
-  <label>Hora<br><input type="time" name="hora" class="border rounded px-2 py-1" placeholder="auto"></label>
-  <button class="border bg-white rounded px-3 py-1.5" hx-post="{% url 'bloque' 'entrada' %}" hx-include="closest form">Los que faltan entraron (9:00 si no pones hora)</button>
-  <button class="border bg-white rounded px-3 py-1.5" hx-post="{% url 'bloque' 'salida' %}" hx-include="closest form">Los presentes salieron (16:00 si no pones hora)</button>
-  <span class="text-xs text-slate-500">Para los días normales; luego se corrigen las excepciones.</span>
-</form>
-{% endif %}
+{# Dos formas de marcar: en el momento (un toque por persona) o al final del día (una lista y un guardar). #}
+<div class="mt-4 inline-flex rounded-lg border bg-white p-1 text-sm" role="tablist">
+  <a href="?modo=momento&fecha={{ fecha|date:'Y-m-d' }}" class="px-4 py-1.5 rounded-md {% if modo == 'momento' %}bg-blue-700 text-white{% endif %}">En el momento</a>
+  <a href="?modo=dia&fecha={{ fecha|date:'Y-m-d' }}" class="px-4 py-1.5 rounded-md {% if modo == 'dia' %}bg-blue-700 text-white{% endif %}">Al final del día</a>
+</div>
 
-<div id="tarjetas" class="mt-4"
-     hx-get="{% url 'hoy_tarjetas' %}?fecha={{ fecha|date:'Y-m-d' }}"
-     {% if es_hoy %}hx-trigger="load, every 5s [!document.querySelector('#tarjetas input:focus')]"{% else %}hx-trigger="load"{% endif %} hx-swap="innerHTML"></div>
+{% if modo == 'momento' %}
+  {% if es_hoy %}
+  <form class="mt-4 flex gap-2 flex-wrap text-sm" hx-target="#tarjetas" hx-swap="innerHTML">
+    <button class="border bg-white rounded-lg px-3 py-2" hx-post="{% url 'bloque' 'entrada' %}">Todos los que faltan entraron</button>
+    <button class="border bg-white rounded-lg px-3 py-2" hx-post="{% url 'bloque' 'salida' %}">Todos los presentes salieron</button>
+  </form>
+  {% endif %}
+  <div id="tarjetas" class="mt-4"
+       hx-get="{% url 'hoy_tarjetas' %}?fecha={{ fecha|date:'Y-m-d' }}"
+       {% if es_hoy %}hx-trigger="load, every 5s [!document.querySelector('#tarjetas details[open]')]"{% else %}hx-trigger="load"{% endif %} hx-swap="innerHTML"></div>
+{% else %}
+  <form method="post" action="{% url 'guardar_dia' %}" class="mt-4">
+    {% csrf_token %}<input type="hidden" name="fecha" value="{{ fecha|date:'Y-m-d' }}">
+    <p class="text-sm text-slate-600 mb-3">Marca quién vino. El horario del turno ya está puesto: cambia solo las horas que difieran.</p>
+    <div class="flex gap-2 mb-3 text-sm">
+      <button type="button" class="border bg-white rounded-lg px-3 py-1.5" onclick="document.querySelectorAll('.vino:not(:disabled)').forEach(c=>c.checked=true)">Todos vinieron</button>
+      <button type="button" class="border bg-white rounded-lg px-3 py-1.5" onclick="document.querySelectorAll('.vino:not(:disabled)').forEach(c=>c.checked=false)">Nadie</button>
+    </div>
+    <div class="bg-white border rounded-lg divide-y">
+      {% for f in filas %}
+      <div class="p-3 flex flex-wrap items-center gap-x-4 gap-y-2 {% if f.error %}bg-red-50{% endif %}">
+        <label class="flex items-center gap-3 min-w-[11rem] flex-1 cursor-pointer">
+          <input type="checkbox" class="vino h-6 w-6" name="vino_{{ f.emp.pk }}" {% if f.vino %}checked{% endif %} {% if f.varios %}disabled{% endif %}>
+          <span class="font-medium">{{ f.emp.nombre }}</span></label>
+        {% if f.varios %}
+          <span class="text-sm text-slate-500">Tiene varios tramos. <a class="underline" href="{% url 'dia_pagina' f.emp.pk fecha|date:'Y-m-d' %}">Corregir el día</a></span>
+        {% else %}
+          <div class="flex items-center gap-2 text-sm">
+            <input type="time" name="entrada_{{ f.emp.pk }}" value="{{ f.entrada }}" class="border rounded px-2 py-1.5" aria-label="Entrada de {{ f.emp.nombre }}">
+            <span>a</span>
+            <input type="time" name="salida_{{ f.emp.pk }}" value="{{ f.salida }}" class="border rounded px-2 py-1.5" aria-label="Salida de {{ f.emp.nombre }}">
+          </div>
+        {% endif %}
+        {% if f.error %}<p class="w-full text-sm text-red-700">{{ f.error }}</p>{% endif %}
+      </div>
+      {% empty %}<p class="p-4 text-slate-500">No hay empleados activos.</p>{% endfor %}
+    </div>
+    <button class="mt-4 w-full sm:w-auto bg-blue-700 text-white rounded-lg px-6 py-3 font-semibold">Guardar el día</button>
+    <p class="text-xs text-slate-500 mt-2">Quien está sin marcar queda sin asistencia ese día. Si alguien ya tenía horas y lo desmarcas, se quitan (queda en la bitácora).</p>
+  </form>
+{% endif %}
 {% endblock %}

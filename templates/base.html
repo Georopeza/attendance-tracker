@@ -16,13 +16,9 @@
         Sala Tricolor</a>
       {% if user.is_authenticated %}
       <nav class="flex gap-x-4 gap-y-1 text-sm flex-wrap items-center">
-        <a href="{% url 'hoy' %}">Hoy</a>
-        <a href="{% url 'semana' %}">Resumen semanal</a>
-        <a href="{% url 'empleados' %}">Empleados</a>
-        <a href="{% url 'turnos' %}">Turnos</a>
-        <a href="{% url 'disponibilidad' %}">Disponibilidad</a>
-        <a href="{% url 'bitacora' %}">Bitácora</a>
-        <a href="{% url 'coordinadores' %}">Coordinadores</a>
+        <a href="{% url 'hoy' %}" class="font-semibold">Hoy</a>
+        <a href="{% url 'semana' %}" class="font-semibold">Semana</a>
+        <a href="{% url 'configuracion' %}">Configuración</a>
         <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="text-slate-500">Salir ({{ user.username }})</button></form>
       </nav>
       {% endif %}

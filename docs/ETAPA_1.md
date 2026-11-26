@@ -22,6 +22,8 @@ verlo en tiempo real y dejar todo en bitácora.
   empleado, nueva vigencia e historial de vigencias.
 - [x] Hoy: marcación en bloque, deshacer, día sin turno, navegar a días pasados, corregir el día
   (agregar, editar y quitar tramos).
+- [x] Hoy simplificado: tarjeta mínima, dos modos de marcar (en el momento y al final del día), menú
+  reducido a Hoy / Semana / Configuración.
 - [x] Bitácora: pantalla de consulta con filtro por entidad.
 - [x] Coordinadores: crear y desactivar accesos.
 - [x] Preparado para la nube: `Procfile`, `build.sh`, ajustes de seguridad con `DEBUG=0`.
