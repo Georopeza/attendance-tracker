@@ -23,15 +23,14 @@ Lee antes de tocar nada: `docs/REQUISITOS.md` (qué se pidió y qué está decid
 ## Reglas que no se deben romper
 
 - Idioma de la interfaz y mensajes: **español**.
-- Los empleados **no tienen acceso**. No hay asignación de turnos a personas. Todos los coordinadores
-  son iguales.
-- Horas guardadas en UTC, mostradas en `America/Caracas`.
-- El cálculo de horas vive solo en `asistencia/horas.py` (módulo puro). Cualquier cambio de regla se
+- Los empleados **no tienen acceso**. No hay asignación de turnos a personas. Una sola persona usa la app.
+- Las horas se guardan como minutos del día en hora de Venezuela (`America/Caracas`); "hoy" y "ahora" siempre salen de esa zona, no de la del teléfono.
+- El cálculo de horas vive solo en `app/js/horas.js` (módulo puro; `asistencia/horas.py` es su equivalente de referencia). Cualquier cambio de regla se
   cambia ahí y con pruebas. Los totales del día **no se guardan**, se calculan desde los tramos.
 - Redondeo sobre el total del día: 0–15 baja, 45–59 sube, 16–44 exacto y "por revisar".
 - Antes del inicio del turno no cuenta; día sin turno = todo extra de día sin turno (otro color).
 - **Archivar, no eliminar** empleados con historial. Confirmación antes de archivar/borrar.
-- Todo cambio de datos se registra en la bitácora (`bitacora.models.registrar`).
+- No hay bitácora de cambios (se descartó). Las correcciones en semanas cerradas guardan su motivo.
 - Colores de horas: normales verde azulado, extra tras turno azul, extra día sin turno violeta,
   "por revisar" ámbar.
 
