@@ -6,6 +6,7 @@ const OUT = require('os').tmpdir() + '/control-asistencia-e2e';
 fs.mkdirSync(OUT, { recursive: true });
 const BASE = 'http://127.0.0.1:8780/';
 let fallos = 0;
+const esp = ms => new Promise(r => setTimeout(r, ms));
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok   ', m); };
 
 (async () => {
@@ -51,6 +52,29 @@ const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else cons
   await carlos.locator('button', { hasText: 'Deshacer' }).click();
   await page.waitForTimeout(250); ok(await page.locator('article', { hasText: 'Carlos Díaz' }).locator('text=Sin llegar').count() === 1, 'deshacer vuelve a Sin llegar');
   await page.screenshot({ path: `${OUT}/hoy-detalle.png` });
+
+  // Elegir varias personas y marcarlas a una misma hora
+  await page.click('text=Elegir personas…'); await esp(250);
+  ok(await page.locator('input[data-a="sel-toggle"]').count() === 6, 'modo "Elegir personas": una casilla por persona');
+  await page.locator('label:has-text("Ana Pérez") input').check(); await page.locator('label:has-text("Luis Mora") input').check(); await page.locator('label:has-text("Rosa Linares") input').check();
+  ok(await page.locator('text=3 elegidas').count() === 1, 'cuenta las personas elegidas (3)');
+  await page.fill('#sel-hora', '08:15');
+  await page.locator('label:has-text("María Rojas") input').check();                         // elegir otra no borra la hora escrita
+  ok(await page.inputValue('#sel-hora') === '08:15', 'la hora escrita no se pierde al elegir más personas');
+  await page.click('button:text-is("Entraron")'); await esp(300);
+  ok(await page.locator('article', { hasText: 'Ana Pérez' }).locator('text=Presente desde 08:15').count() === 1 && await page.locator('article', { hasText: 'María Rojas' }).locator('text=Presente desde 08:15').count() === 1, 'las 4 personas elegidas entraron a las 08:15');
+  ok(await page.locator('article', { hasText: 'Carlos Díaz' }).locator('text=Sin llegar').count() === 1, 'las no elegidas siguen sin llegar');
+  await page.click('text=Elegir personas…'); await esp(200); await page.click('button:text-is("Todos")'); await page.fill('#sel-hora', '12:00');
+  await page.click('button:text-is("Salieron")'); await esp(300);
+  ok(await page.locator('article', { hasText: 'Ana Pérez' }).locator('text=Se fue a las 12:00').count() === 1, 'Todos + Salieron: salen los presentes a las 12:00');
+  ok(await page.locator('#toast').textContent().then(t => /omitidas/.test(t)), 'avisa a quiénes omitió (los que no estaban presentes)');
+  // deshacer lo anterior para no alterar el resto de la prueba
+  for (const n of ['Ana Pérez', 'Luis Mora', 'Rosa Linares', 'María Rojas']) {
+    const art = page.locator('article', { hasText: n });
+    if (!(await art.locator('details').evaluate(d => d.open))) await art.locator('summary').click();
+    await art.locator('button', { hasText: 'Deshacer' }).click(); await esp(120);
+    await page.locator('article', { hasText: n }).locator('button', { hasText: 'Deshacer' }).click(); await esp(120);
+  }
 
   // Marcar a otra hora (entrada olvidada)
   await carlos.locator('button', { hasText: 'Marcar hora de entrada' }).click();

@@ -264,3 +264,29 @@ test('cada semana empieza en cero: lo del mes no se arrastra a la semana siguien
   assert.equal(S.resumenSemana(st, '2026-11-30').filas[0].total, 0);              // la semana siguiente arranca en cero
   assert.equal(S.resumenMes(st, '2026-11-01').filas[0].total, 35 * 60);           // y el mes conserva lo acumulado
 });
+
+test('marcar a varias personas a la misma hora: entradas y salidas, y por qué se omite alguna', () => {
+  const st = nuevo('Ana', 'Luis', 'Rosa', 'Beto'), ids = ['Ana', 'Luis', 'Rosa', 'Beto'].map(n => id(st, n)); reloj(10 * 60);
+  const r = A.marcarVarios(st, ids.slice(0, 3), 'entrada', '08:00');                    // Ana, Luis y Rosa entraron a las 8:00
+  assert.ok(r.ok); assert.equal(r.hechos, 3); assert.equal(r.omitidos.length, 0);
+  assert.ok(ids.slice(0, 3).every(i => S.tramosDelDia(st, i, HOY)[0].entrada === 8 * 60));
+  assert.equal(S.tramosDelDia(st, ids[3], HOY).length, 0);                               // Beto no estaba elegido
+  const otra = A.marcarVarios(st, [ids[0], ids[3]], 'entrada', '09:00');                 // Ana ya está presente: se omite
+  assert.equal(otra.hechos, 1); assert.deepEqual(otra.omitidos, [{ nombre: 'Ana', motivo: 'ya está presente' }]);
+  const sal = A.marcarVarios(st, ids, 'salida', '09:30');                                // salen todos los presentes
+  assert.equal(sal.hechos, 4); assert.equal(S.tramosDelDia(st, ids[1], HOY)[0].salida, 9 * 60 + 30);
+  const nadie = A.marcarVarios(st, [ids[1]], 'salida', '09:45');                         // Luis ya salió
+  assert.equal(nadie.hechos, 0); assert.equal(nadie.omitidos[0].motivo, 'no está presente');
+});
+
+test('marcar a varios: validaciones y nada a medias', () => {
+  const st = nuevo('Ana', 'Luis'), [ana, luis] = ['Ana', 'Luis'].map(n => id(st, n)); reloj(10 * 60);
+  assert.match(A.marcarVarios(st, [], 'entrada', '08:00').error, /al menos una/);
+  assert.match(A.marcarVarios(st, [ana], 'entrada', '').error, /hora/);
+  assert.match(A.marcarVarios(st, [ana], 'entrada', '11:00').error, /todavía no ha llegado/);
+  assert.equal(st.tramos.length, 0);
+  A.marcarVarios(st, [ana], 'entrada', '09:00');
+  const e = A.marcarVarios(st, [ana, luis], 'salida', '08:00');                          // salida antes de la entrada de Ana: se omite; Luis no estaba
+  assert.equal(e.hechos, 0); assert.match(e.omitidos[0].motivo, /anterior a la entrada/);
+  assert.equal(S.tramosDelDia(st, ana, HOY)[0].salida, null);                            // lo de Ana no se alteró
+});

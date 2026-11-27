@@ -25,15 +25,16 @@ function dibujar() {
   try { html = r.v({ st, ui, p }); } catch (e) { console.error(e); html = `<div class="rounded-2xl bg-red-100 p-4 text-red-900">Algo salió mal al mostrar esta pantalla. Vuelve a Hoy y, si sigue, guarda una copia de seguridad.</div>`; }
   const nav = pestañas().map(([k, t, h, d]) => `<a href="${h}" class="flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium ${r.tab === k ? 'text-blue-700' : 'text-slate-500'}" ${r.tab === k ? 'aria-current="page"' : ''}>
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>${t}</a>`).join('');
-  app.innerHTML = `<header class="mx-auto w-full max-w-2xl px-4 pb-1 pt-3"><div class="flex items-center gap-2"><span class="grid h-6 w-6 place-items-center rounded-md bg-blue-700 text-white" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span><span class="min-w-0"><span class="block truncate font-bold leading-tight">${esc(st.ajustes.organizacion || 'Control de Asistencia')}</span>${st.ajustes.descripcion ? `<span class="block truncate text-xs leading-tight text-slate-500">${esc(st.ajustes.descripcion)}</span>` : ''}</span></div></header>
-    <main class="mx-auto w-full max-w-2xl px-4 pb-32 pt-3">${html}</main>
-    <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur" style="padding-bottom:env(safe-area-inset-bottom,0px)"><div class="mx-auto flex max-w-2xl">${nav}</div></nav>`;
+  const ancho = r.ancho ? 'max-w-2xl md:max-w-4xl xl:max-w-6xl' : 'max-w-2xl';
+  app.innerHTML = `<header class="mx-auto w-full ${ancho} px-4 pb-1 pt-3"><div class="flex items-center gap-2"><span class="grid h-6 w-6 place-items-center rounded-md bg-blue-700 text-white" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span><span class="min-w-0"><span class="block truncate font-bold leading-tight">${esc(st.ajustes.organizacion || 'Control de Asistencia')}</span>${st.ajustes.descripcion ? `<span class="block truncate text-xs leading-tight text-slate-500">${esc(st.ajustes.descripcion)}</span>` : ''}</span></div></header>
+    <main class="mx-auto w-full ${ancho} px-4 pb-32 pt-3">${html}</main>
+    <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur" style="padding-bottom:env(safe-area-inset-bottom,0px)"><div class="mx-auto flex ${ancho}">${nav}</div></nav>`;
   window.scrollTo(0, y);
 }
 
 function persistirYDibujar(cambio) { if (cambio === null) return; if (cambio !== false) guardar(st); dibujar(); }
 
-addEventListener('hashchange', () => { ui.errorDia = ''; window.scrollTo(0, 0); dibujar(); });
+addEventListener('hashchange', () => { ui.errorDia = ''; ui.seleccion = null; window.scrollTo(0, 0); dibujar(); });
 
 document.addEventListener('click', async ev => {
   const el = ev.target.closest('[data-a]');
@@ -55,6 +56,7 @@ document.addEventListener('submit', async ev => {
   const f = formularios[form.dataset.f]; if (!f) return;
   try { persistirYDibujar(await f({ st, ui, form, submitter: ev.submitter })); } catch (e) { console.error(e); toast('No se pudo guardar.', 'error'); }
 });
+document.addEventListener('input', ev => { if (ev.target.id === 'sel-hora') ui.selHora = ev.target.value; });   // la hora al marcar a varias personas no se pierde al elegir
 // Formulario de visita: se recuerda lo escrito y se actualiza el total mientras se escribe.
 document.addEventListener('input', ev => { const form = ev.target.closest('form[data-f="visita"]'); if (form) alEscribirVisita(ui, form); });
 document.addEventListener('change', ev => {

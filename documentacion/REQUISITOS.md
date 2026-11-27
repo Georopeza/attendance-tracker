@@ -31,7 +31,7 @@ Si algo cambia, se actualiza aquí primero.
   corrección rápida de ±15 min y deshacer.
 - Un empleado puede **ir y volver el mismo día** (por ejemplo 8–11 y 14–16): cada día es una lista de
   **tramos** que se suman.
-- Marcación **en bloque** para días normales ("los que faltan entraron a las 9:00", "todos los presentes
+- **Elegir varias personas** y marcarlas a una misma hora (entrada o salida), además de marcar a todos de una vez. Marcación **en bloque** para días normales ("los que faltan entraron a las 9:00", "todos los presentes
   salieron a las 16:00"), y luego se corrigen las excepciones.
 - La semana va de **lunes a domingo**. A veces se trabaja sábado y domingo; entonces se marca ese día.
 - **No existe asignación de turnos a personas.** Cada empleado tiene libertad de venir o no; se marcan

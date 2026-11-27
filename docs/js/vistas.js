@@ -13,6 +13,25 @@ import { RUTAS_VISITAS, accionesVisitas, formulariosVisitas, rangoInforme } from
 import { pdfVisitas, excelVisitas } from './visitas-informes.js';
 import { excelHorasSemana, excelHorasMes } from './excel.js';
 
+// ================= HOY: elegir varias personas =================
+function vistaSeleccion(st, ui, activos) {
+  const a = ahora(), sel = ui.seleccion, hora = ui.selHora || deMin(a.min);
+  const filas = activos.map(e => {
+    const tr = S.tramosDelDia(st, e.id, a.fecha), est = S.estadoDe(tr), u = tr[tr.length - 1];
+    const txt = est === 'presente' ? `Presente desde ${deMin(u.entrada)}` : est === 'se_fue' ? `Se fue a las ${deMin(u.salida)}` : 'Sin llegar';
+    return `<label class="flex min-h-[52px] cursor-pointer items-center gap-3 rounded-xl border border-slate-300 bg-white px-3 py-2 has-[:checked]:border-blue-700 has-[:checked]:bg-blue-50">
+      <input type="checkbox" data-a="sel-toggle" data-id="${e.id}" ${sel.has(e.id) ? 'checked' : ''} class="h-6 w-6 flex-none accent-blue-700"><span class="min-w-0 flex-1"><b class="block truncate">${esc(e.nombre)}</b><span class="block text-xs text-slate-500">${txt}</span></span></label>`;
+  }).join('');
+  return `<div class="sticky top-2 z-30 mb-3 rounded-2xl border border-blue-200 bg-blue-50 p-3 shadow-md">
+    <p class="mb-2 text-sm font-medium text-blue-900">${sel.size ? `${sel.size} ${sel.size === 1 ? 'elegida' : 'elegidas'}` : 'Elige a quiénes marcar'}</p>
+    <div class="flex flex-wrap items-end gap-2">
+      <label class="text-xs text-slate-600">Hora<br><input id="sel-hora" type="time" value="${esc(hora)}" class="rounded-lg border border-slate-300 bg-white px-2 py-2 text-base"></label>
+      ${boton('Entraron', 'data-a="sel-aplicar" data-q="entrada"', 'bg-blue-700 text-white font-semibold')}${boton('Salieron', 'data-a="sel-aplicar" data-q="salida"', 'border border-slate-400 bg-white')}
+      ${boton('Cancelar', 'data-a="sel-cancelar"', 'border border-slate-300 bg-white')}</div></div>
+    <div class="mb-3 flex gap-2">${boton('Todos', 'data-a="sel-todos" data-v="1"', 'border border-slate-300 bg-white !py-2')}${boton('Ninguno', 'data-a="sel-todos" data-v="0"', 'border border-slate-300 bg-white !py-2')}</div>
+    <div class="grid gap-2 md:grid-cols-2 xl:grid-cols-3">${filas}</div>`;
+}
+
 // ================= HOY =================
 function tarjetaEmpleado(st, ui, emp, fecha, esHoy) {
   const tramos = S.tramosDelDia(st, emp.id, fecha), estado = S.estadoDe(tramos), r = S.resumenDia(st, emp.id, fecha, tramos);
@@ -22,10 +41,10 @@ function tarjetaEmpleado(st, ui, emp, fecha, esHoy) {
   const borde = estado === 'presente' ? 'border-l-teal-600' : estado === 'se_fue' ? 'border-l-blue-600' : 'border-l-slate-300';
   const err = ui.errores[emp.id];
   const btn = !esHoy ? '' : estado === 'presente'
-    ? `<button data-a="marcar" data-id="${emp.id}" class="min-h-[56px] w-full rounded-xl border-2 border-slate-400 text-lg font-semibold">Salió</button>`
-    : `<button data-a="marcar" data-id="${emp.id}" class="min-h-[56px] w-full rounded-xl bg-blue-700 text-lg font-semibold text-white">${estado === 'se_fue' ? 'Volvió' : 'Entró'}</button>`;
+    ? `<button data-a="marcar" data-id="${emp.id}" class="min-h-[56px] w-full rounded-xl border-2 border-slate-400 text-lg font-semibold md:min-h-[48px] md:text-base">Salió</button>`
+    : `<button data-a="marcar" data-id="${emp.id}" class="min-h-[56px] w-full rounded-xl bg-blue-700 text-lg font-semibold text-white md:min-h-[48px] md:text-base">${estado === 'se_fue' ? 'Volvió' : 'Entró'}</button>`;
   // Para cuando se olvidó marcar en el momento: se escribe la hora real.
-  const otraHora = !esHoy ? '' : `<button data-a="marcar-hora" data-id="${emp.id}" class="min-h-[44px] w-full rounded-xl border border-slate-300 bg-white text-sm font-medium text-slate-700">${estado === 'presente' ? 'Marcar hora de salida' : estado === 'se_fue' ? 'Marcar hora de regreso' : 'Marcar hora de entrada'}</button>`;
+  const otraHora = !esHoy ? '' : `<button data-a="marcar-hora" data-id="${emp.id}" class="min-h-[44px] w-full rounded-xl border border-slate-300 bg-white text-sm font-medium text-slate-700 md:min-h-[40px]">${estado === 'presente' ? 'Marcar hora de salida' : estado === 'se_fue' ? 'Marcar hora de regreso' : 'Marcar hora de entrada'}</button>`;
   const tr = tramos.map(t => `<span class="rounded bg-slate-100 px-2 py-0.5">${deMin(t.entrada)} – ${t.salida != null ? deMin(t.salida) : 'en curso'}</span>`).join('') || '<span class="text-slate-500">Sin marcas</span>';
   return `<article class="space-y-3 rounded-2xl border border-l-4 border-slate-200 ${borde} bg-white p-4">
     <div class="flex items-baseline justify-between gap-2"><strong class="text-lg">${esc(emp.nombre)}</strong><span class="text-sm ${colorTxt}">${texto}</span></div>
@@ -102,8 +121,9 @@ function vistaHoy({ st, ui }) {
     return cab + vacio('Todavía no hay personas. Agrégalas para empezar a marcar.', `<div class="mt-3">${botonPri('Agregar personas', 'data-a="ir" data-h="#/empleados"')}</div>`);
   }
   if (ui.modo === 'momento') {
-    const lote = esHoy ? `<div class="mb-4 grid grid-cols-2 gap-2">${boton('Todos los que faltan entraron', 'data-a="bloque" data-q="entrada"', 'border border-slate-300 bg-white !py-2')}${boton('Todos los presentes salieron', 'data-a="bloque" data-q="salida"', 'border border-slate-300 bg-white !py-2')}</div>` : '';
-    return recordatorio + cab + lote + `<div class="space-y-3">${activos.map(e => tarjetaEmpleado(st, ui, e, fecha, esHoy)).join('')}</div>`;
+    if (esHoy && ui.seleccion) return recordatorio + cab + vistaSeleccion(st, ui, activos);
+    const lote = esHoy ? `<div class="mb-4 flex flex-wrap gap-2">${boton(`Todos los que faltan entraron${ini ? ` (${ini})` : ''}`, 'data-a="bloque" data-q="entrada"', 'border border-slate-300 bg-white !py-2')}${boton(`Todos los presentes salieron${fin ? ` (${fin})` : ''}`, 'data-a="bloque" data-q="salida"', 'border border-slate-300 bg-white !py-2')}${boton('Elegir personas…', 'data-a="sel-activar"', 'border border-blue-300 bg-blue-50 text-blue-800 !py-2')}</div>` : '';
+    return recordatorio + cab + lote + `<div class="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">${activos.map(e => tarjetaEmpleado(st, ui, e, fecha, esHoy)).join('')}</div>`;
   }
   return recordatorio + cab + `<form data-f="guardar-dia"><p class="mb-3 text-sm text-slate-600">Marca quién vino. El horario del turno ya está puesto: cambia solo las horas que difieran.</p>
     <div class="mb-3 flex gap-2">${boton('Todos vinieron', 'type="button" data-a="todos" data-v="1"')}${boton('Nadie', 'type="button" data-a="todos" data-v="0"')}</div>
@@ -160,7 +180,7 @@ function vistaSemana({ st, ui }) {
       <div class="rounded-lg bg-violet-50 py-2 text-violet-800"><b class="block text-sm">${hTxt(f.extraSinTurno)}</b>sin turno</div></div>
     <a href="#/semana/${f.emp.id}" class="mt-3 flex min-h-[44px] items-center justify-center rounded-xl border border-slate-300 text-sm font-medium">Ver semana día por día</a></article>`).join('');
   return cabeza + banner + `<div class="mb-4 flex items-center justify-between rounded-2xl bg-slate-900 p-4 text-white"><span>Total del equipo</span><b class="text-2xl tabular-nums">${hTxt(total)}</b></div>
-    <div class="space-y-3">${cards}</div><p class="mt-3 text-center text-xs text-slate-500">Promedio del equipo: ${hTxt(promedio)}</p>`;
+    <div class="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">${cards}</div><p class="mt-3 text-center text-xs text-slate-500">Promedio del equipo: ${hTxt(promedio)}</p>`;
 }
 
 function vistaDesglose({ st, ui, p }) {
@@ -178,7 +198,7 @@ function vistaDesglose({ st, ui, p }) {
           ${r.porRevisar ? pildora('por revisar', 'bg-amber-100 text-amber-800') : ''}</p>` : ''}
       <a href="#/dia/${empId}/${d.fecha}" class="mt-2 inline-flex min-h-[44px] items-center text-sm font-medium text-blue-700 underline">${hubo ? 'Corregir' : 'Agregar horas'}</a></div>`;
   }).join('');
-  return `${volver('#/semana', 'Resumen semanal')}${titulo(esc(emp.nombre), `Semana ${rangoSemana(lunes)}`)}<div class="space-y-3">${filas}</div>
+  return `${volver('#/semana', 'Resumen semanal')}${titulo(esc(emp.nombre), `Semana ${rangoSemana(lunes)}`)}<div class="grid items-start gap-3 md:grid-cols-2">${filas}</div>
     <div class="mt-4 rounded-2xl bg-slate-900 p-4 text-white"><div class="flex justify-between text-lg"><span>Suma de los días</span><b class="tabular-nums">${hTxt(suma)}</b></div>
       <p class="mt-1 text-sm text-slate-300">Normales ${hTxt(sn)} · Extra ${hTxt(sx)} · Sin turno ${hTxt(sf)}</p></div>`;
 }
@@ -201,7 +221,7 @@ function vistaMes({ st, ui }) {
       <div class="rounded-lg bg-violet-50 py-2 text-violet-800"><b class="block text-sm">${hTxt(f.extraSinTurno)}</b>sin turno</div></div>
     <a href="#/mes/${f.emp.id}" class="mt-3 flex min-h-[44px] items-center justify-center rounded-xl border border-slate-300 text-sm font-medium">Ver el mes semana por semana</a></article>`).join('');
   return cabeza + nota + `<div class="mb-4 flex items-center justify-between rounded-2xl bg-slate-900 p-4 text-white"><span>Total del equipo</span><b class="whitespace-nowrap text-2xl tabular-nums">${hTxt(total)}</b></div>
-    <div class="space-y-3">${cards}</div><p class="mt-3 text-center text-xs text-slate-500">Promedio del equipo en el mes: ${hTxt(promedio)}</p>`;
+    <div class="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">${cards}</div><p class="mt-3 text-center text-xs text-slate-500">Promedio del equipo en el mes: ${hTxt(promedio)}</p>`;
 }
 
 function vistaMesPersona({ st, ui, p }) {
@@ -354,7 +374,7 @@ function vistaAjustes({ st }) {
 
 // ================= ENRUTADOR DE VISTAS =================
 export const RUTAS = {
-  hoy: { v: vistaHoy, tab: 'hoy' }, mes: { v: c => (c.p[1] ? vistaMesPersona(c) : vistaMes(c)), tab: 'semana' }, dia: { v: vistaDia, tab: 'hoy' }, semana: { v: c => (c.p[1] ? vistaDesglose(c) : vistaSemana(c)), tab: 'semana' },
+  hoy: { v: vistaHoy, tab: 'hoy', ancho: true }, mes: { v: c => (c.p[1] ? vistaMesPersona(c) : vistaMes(c)), tab: 'semana', ancho: true }, dia: { v: vistaDia, tab: 'hoy' }, semana: { v: c => (c.p[1] ? vistaDesglose(c) : vistaSemana(c)), tab: 'semana', ancho: true },
   empleados: { v: vistaEmpleados, tab: 'mas' }, turnos: { v: vistaTurnos, tab: 'mas' }, disponibilidad: { v: vistaDisponibilidad, tab: 'mas' },
   disp: { v: vistaFicha, tab: 'mas' }, ajustes: { v: vistaAjustes, tab: 'mas' }, ...RUTAS_VISITAS, sugerencia: { v: vistaSugerencia, tab: 'mas' }, mas: { v: vistaMas, tab: 'mas' },
 };
@@ -409,7 +429,7 @@ export const acciones = {
   exportar,
   'omitir-bienvenida': ({ st }) => { st.ajustes.bienvenida = true; return true; },
   ir: (c) => { location.hash = c.d.h; return false; },
-  modo: ({ d, ui }) => { ui.modo = d.m; ui.erroresDia = {}; ui.valoresDia = null; return false; },
+  modo: ({ d, ui }) => { ui.seleccion = null; ui.modo = d.m; ui.erroresDia = {}; ui.valoresDia = null; return false; },
   dia: ({ d, ui }) => { const a = ahora().fecha, f = sumarDias(ui.fecha || a, Number(d.d)); ui.fecha = f >= a ? null : f; ui.erroresDia = {}; ui.valoresDia = null; return false; },
   hoy: ({ ui }) => { ui.fecha = null; return false; },
   marcar: ({ st, d, ui }) => { const r = A.marcar(st, Number(d.id)); if (r.error) { ui.errores[d.id] = r.error; } else delete ui.errores[d.id]; return true; },
@@ -437,6 +457,19 @@ export const acciones = {
     return true;
   },
   deshacer: ({ st, d, ui }) => { ui.abiertos.add(Number(d.id)); A.deshacer(st, Number(d.id)); return true; },
+  'sel-activar': ({ ui }) => { ui.seleccion = new Set(); ui.selHora = deMin(ahora().min); return false; },
+  'sel-cancelar': ({ ui }) => { ui.seleccion = null; return false; },
+  'sel-toggle': ({ ui, d, el }) => { const id = Number(d.id); if (el.checked) ui.seleccion.add(id); else ui.seleccion.delete(id); return false; },
+  'sel-todos': ({ st, ui, d }) => { ui.seleccion = new Set(d.v === '1' ? S.empleadosActivos(st).map(e => e.id) : []); return false; },
+  'sel-aplicar': ({ st, ui, d }) => {
+    const hora = (document.getElementById('sel-hora') || {}).value || ui.selHora;
+    const r = A.marcarVarios(st, [...ui.seleccion], d.q, hora);
+    if (r.error) { ui.selHora = hora; toast(r.error, 'error'); return false; }
+    const nota = r.omitidos.length ? ` ${r.omitidos.length} omitida${r.omitidos.length === 1 ? '' : 's'}: ${r.omitidos.map(o => `${o.nombre} (${o.motivo})`).join(', ')}.` : '';
+    if (!r.hechos) { ui.selHora = hora; toast(`No se marcó a nadie.${nota}`, 'error'); return false; }
+    toast(`${r.hechos} ${r.hechos === 1 ? 'persona marcada' : 'personas marcadas'} a las ${r.hora}.${nota}`);
+    ui.seleccion = null; return true;
+  },
   bloque: ({ st, d }) => { const r = A.bloque(st, d.q); toast(r.hechos ? `${r.hechos} marcas a las ${r.hora}.${r.omitidos ? ` ${r.omitidos} omitidas.` : ''}` : 'No había a quién marcar.'); return true; },
   // Solo marca o desmarca casillas en pantalla: no hay que guardar ni volver a dibujar (se perderían).
   todos: ({ d }) => { document.querySelectorAll('[name^="vino-"]:not(:disabled)').forEach(c => { c.checked = d.v === '1'; }); return null; },

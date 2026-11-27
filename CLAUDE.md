@@ -54,6 +54,8 @@ El uso diario es **marcar y listo**. La pantalla Hoy es la principal y debe segu
   hora ("Marcar hora de entrada / salida / regreso", para cuando se olvidó marcar en el momento; no acepta
   horas futuras). Correcciones, horas y avisos van escondidos en "Detalle y correcciones" (incluye "Cambiar
   hora exacta"); los cálculos se ven en el resumen semanal.
+- Marcar a varias personas: botones "Todos los que faltan entraron / Todos los presentes salieron" (a la hora del turno, que se ve en el botón) y **"Elegir personas…"**: casillas, una hora común y "Entraron / Salieron" (`marcarVarios` en `acciones.js`).
+- **Tablets:** las pantallas de uso diario (Hoy, Semana, Mes) usan `ancho: true` en `RUTAS` y cuadrícula (`md:grid-cols-2 xl:grid-cols-3`) con botones de 48px; en teléfono, una columna con botones de 56px. Se comprueba con `pruebas/e2e-tablet.cjs`.
 - Dos formas de marcar, ambas disponibles: **en el momento** (un toque) y **al final del día**
   (lista con casillas y el horario del turno ya puesto, un solo guardar).
 - Menú mínimo: Hoy, Semana, Configuración. Lo que se toca poco vive en Configuración.

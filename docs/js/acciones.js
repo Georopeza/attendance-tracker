@@ -54,6 +54,33 @@ function marcarEn(st, empId, min) {
   return ok();
 }
 
+/** Marca a varias personas a la misma hora. que = 'entrada' | 'salida'. Devuelve cuántas se marcaron y por qué se omitió alguna. */
+export function marcarVarios(st, ids, que, hora) {
+  const a = ahora();
+  if (!ids.length) return err('Elige al menos una persona.');
+  if (!hora) return err('Escribe la hora.');
+  const min = aMin(hora);
+  if (min > a.min) return err('Esa hora todavía no ha llegado.');
+  let hechos = 0;
+  const omitidos = [];
+  for (const id of ids) {
+    const emp = st.empleados.find(e => e.id === id), tramos = tramosDelDia(st, id, a.fecha), ultimo = tramos[tramos.length - 1];
+    if (!emp) continue;
+    if (que === 'entrada') {
+      if (ultimo && ultimo.salida == null) { omitidos.push({ nombre: emp.nombre, motivo: 'ya está presente' }); continue; }
+      const nuevo = { id: nuevoId(st), empId: id, fecha: a.fecha, entrada: min, salida: null }, e = validarTramos([...tramos, nuevo]);
+      if (e) { omitidos.push({ nombre: emp.nombre, motivo: e }); continue; }
+      st.tramos.push(nuevo); hechos++;
+    } else {
+      if (!ultimo || ultimo.salida != null) { omitidos.push({ nombre: emp.nombre, motivo: 'no está presente' }); continue; }
+      const e = validarTramos(tramos.map(t => (t === ultimo ? { ...t, salida: min } : t)));
+      if (e) { omitidos.push({ nombre: emp.nombre, motivo: e }); continue; }
+      ultimo.salida = min; hechos++;
+    }
+  }
+  return ok({ hechos, omitidos, hora });
+}
+
 export function ajustar(st, empId, sentido) {
   const a = ahora(), tramos = tramosDelDia(st, empId, a.fecha), ultimo = tramos[tramos.length - 1];
   if (!ultimo) return ok();
