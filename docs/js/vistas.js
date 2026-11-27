@@ -76,8 +76,8 @@ function vistaBienvenida({ st }) {
       ${tarjeta(`<label for="b-personas" class="mb-1 block text-sm font-medium text-slate-700">Personas a las que les llevarás la asistencia</label>
         <textarea id="b-personas" name="personas" rows="5" placeholder="Una por línea&#10;Ana Pérez&#10;Luis Mora" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base"></textarea>
         <p class="mt-1 text-xs text-slate-500">Puedes agregar más después, en Más → Personas.</p>`)}
-      ${tarjeta(`<label class="flex min-h-[44px] cursor-pointer items-start gap-3"><input type="checkbox" name="visitasActivo" class="mt-0.5 h-6 w-6 accent-blue-700">
-        <span class="text-sm"><b class="block">También quiero contar las visitas que recibo</b><span class="text-slate-500">Personas, instituciones, medios y recorridos (por ejemplo, en un museo). Se puede activar después en Más → Ajustes.</span></span></label>`)}
+      ${tarjeta(`<label class="flex min-h-[44px] cursor-pointer items-start gap-3"><input type="checkbox" name="visitasActivo" ${st.visitas.activo ? 'checked' : ''} class="mt-0.5 h-6 w-6 accent-blue-700">
+        <span class="text-sm"><b class="block">Llevar también el registro de visitas</b><span class="text-slate-500">Personas, instituciones, medios y recorridos (por ejemplo, en un museo). Desmárcalo si solo necesitas la asistencia; se puede cambiar después en Más → Ajustes.</span></span></label>`)}
       <p class="text-sm text-slate-500">Hora detectada: <b>${deMin(a.min)}</b> (${esc(zonaActiva())}). Se puede cambiar en Ajustes.</p>
       <button class="min-h-[56px] w-full rounded-xl bg-blue-700 text-lg font-semibold text-white">Empezar</button>
       <button type="button" data-a="omitir-bienvenida" class="min-h-[48px] w-full rounded-xl text-sm font-medium text-slate-600 underline">Omitir por ahora</button></form>`;
@@ -345,7 +345,7 @@ function vistaAjustes({ st }) {
         <select id="aj-zona" name="zona" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base">${opciones.map(([v, l]) => `<option value="${esc(v)}" ${v === actual ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
         <p class="mt-2 text-sm text-slate-600">Ahora son <b>${deMin(a.min)}</b> del ${fechaLarga(a.fecha)}. Las marcas “Entró” y “Salió” usan esta hora.</p>`)}
       ${tarjeta(`<label class="flex min-h-[44px] cursor-pointer items-start gap-3"><input type="checkbox" name="visitasActivo" ${st.visitas.activo ? 'checked' : ''} class="mt-0.5 h-6 w-6 accent-blue-700">
-        <span class="text-sm"><b class="block">Llevar también el registro de visitas</b><span class="text-slate-500">Para museos, tiendas, eventos…: cuántas personas vienen, de qué institución o medio, y los recorridos. Agrega una pestaña "Visitas".</span></span></label>`)}
+        <span class="text-sm"><b class="block">Llevar también el registro de visitas</b><span class="text-slate-500">Para museos, tiendas, eventos…: cuántas personas vienen, de qué institución o medio, y los recorridos. Aparece como la pestaña "Visitas". Si lo apagas, lo ya registrado se conserva.</span></span></label>`)}
       <button class="min-h-[56px] w-full rounded-xl bg-blue-700 text-lg font-semibold text-white">Guardar ajustes</button></form>`;
 }
 
@@ -517,7 +517,7 @@ export const formularios = {
   bienvenida: ({ st, form }) => {
     const f = new FormData(form), r = A.configuracionInicial(st, { organizacion: f.get('organizacion'), descripcion: f.get('descripcion'), personas: f.get('personas') });
     if (r.error) { toast(r.error, 'error'); return false; }
-    if (f.get('visitasActivo') === 'on') V.guardarOpciones(st, { activo: true });
+    V.guardarOpciones(st, { activo: f.get('visitasActivo') === 'on' });
     toast(r.agregadas ? `Listo. ${r.agregadas} ${r.agregadas === 1 ? 'persona agregada' : 'personas agregadas'}.` : 'Listo. Agrega personas cuando quieras.'); return true;
   },
   ajustes: ({ st, form }) => {

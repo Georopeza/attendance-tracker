@@ -15,7 +15,7 @@ rápida y sencilla. Sirve para cualquier grupo: un salón, un taller, una escuel
 - **Mes:** suma los días del mes por persona, semana por semana, con PDF.
 - **Horas:** dentro del turno son normales; después del fin del turno, extra; sin turno, todo es extra.
   El total del día se redondea a 15 minutos (los casos intermedios se marcan *por revisar*).
-- **Visitas (opcional):** para lugares que reciben público (un museo, una tienda…): cuántas personas vienen, de qué
+- **Visitas (se puede apagar):** para lugares que reciben público (un museo, una tienda…): cuántas personas vienen, de qué
   institución, medio u otro tipo, por edad y sexo, y los recorridos guiados. Informes semanal y mensual.
 - **Personas, turnos y disponibilidad** (con vigencias por fecha), y una **sugerencia** de quién debería venir
   según las horas de la semana, con registro de a quién se avisó.

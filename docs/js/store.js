@@ -4,7 +4,8 @@ const CLAVE = 'asistencia:v1';
 /** Registro de visitas (museos, tiendas, eventos…): tipos de visitante, nombres, rangos de edad, visitas y recorridos. */
 export function visitasPorDefecto() {
   return {
-    activo: false,
+    activo: true,        // viene encendido; se puede apagar en Ajustes (lo ya registrado se conserva)
+    elegido: false,      // true cuando la persona lo encendió o apagó a propósito
     tipos: [
       { id: 'inst', nombre: 'Institución', conNombre: true, archivado: false },
       { id: 'medio', nombre: 'Medio', conNombre: true, archivado: false },
@@ -46,7 +47,9 @@ export function estadoInicial() {
 /** Completa lo que falte (datos de versiones anteriores o copias viejas). */
 export function conPorDefecto(d) {
   const base = estadoInicial();
-  return { ...base, ...d, ajustes: { ...base.ajustes, ...(d.ajustes || {}) }, visitas: { ...base.visitas, ...(d.visitas || {}) } };
+  const visitas = { ...base.visitas, ...(d.visitas || {}) };
+  if (!visitas.elegido) visitas.activo = true;    // si nunca se eligió, rige lo de fábrica: encendido
+  return { ...base, ...d, ajustes: { ...base.ajustes, ...(d.ajustes || {}) }, visitas };
 }
 
 export function cargar() {

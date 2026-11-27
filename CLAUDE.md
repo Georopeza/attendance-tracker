@@ -40,7 +40,7 @@ Lee antes de tocar nada: `documentacion/REQUISITOS.md` (qué se pidió y qué es
 
 ## Módulo de visitas (opcional)
 
-Se enciende en Ajustes y agrega la pestaña Visitas (ver `documentacion/REQUISITOS.md`, sección 11). Reglas: toda
+Viene **encendido por defecto** y se puede apagar en Ajustes (`visitas.elegido` distingue si alguien lo decidió; si nadie lo eligió rige el valor de fábrica). Agrega la pestaña Visitas (ver `documentacion/REQUISITOS.md`, sección 11). Reglas: toda
 visita se anota (con o sin recorrido); un recorrido puede juntar varios grupos; el guía sale de la lista de
 personas; tipos de visitante, grupos de edad y extras son **configurables** (no escribir "museo", "escuela"
 ni rangos fijos en el código: los valores por defecto viven en `visitasPorDefecto()` de `store.js`). Validar

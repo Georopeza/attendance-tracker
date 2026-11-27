@@ -118,7 +118,7 @@ Resumen y hoja Detalle (totales con fórmulas) y PDF con firma del coordinador.
 ## 11. Registro de visitas (módulo opcional)
 
 Para lugares que reciben visitantes (nació para un museo): contar quién viene, de dónde y con qué recorridos.
-Se enciende en Ajustes (o en la bienvenida) y agrega la pestaña **Visitas**; la asistencia del personal sigue igual.
+Viene **encendido por defecto** (pestaña **Visitas**); se puede apagar en Ajustes o en la bienvenida, y lo ya registrado se conserva. La asistencia del personal sigue igual.
 
 - **Visita** = un grupo que llega. Tipos de visitante configurables (por defecto *Institución*, *Medio* y
   *Particulares*; se agregan otros a mano: empresa, gobierno…). Los tipos "con nombre" piden el nombre

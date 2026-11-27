@@ -24,7 +24,7 @@ const esp = ms => new Promise(r => setTimeout(r, ms));
   // --- activar el módulo desde la bienvenida
   await page.fill('#b-organizacion', 'Museo de Prueba');
   await page.fill('#b-personas', 'Ana Pérez\nLuis Mora');
-  await page.check('input[name=visitasActivo]');
+  ok(await page.isChecked('input[name=visitasActivo]'), 'la casilla de visitas viene marcada por defecto');
   await page.click('text=Empezar'); await esp(300);
   ok(await page.locator('nav >> text=Visitas').count() === 1, 'con el módulo encendido aparece la pestaña Visitas');
   await page.click('nav >> text=Visitas'); await esp(300);
@@ -121,6 +121,15 @@ const esp = ms => new Promise(r => setTimeout(r, ms));
   await cp.saveAs(`${OUT}/copia.json`);
   const copia = JSON.parse(fs.readFileSync(`${OUT}/copia.json`, 'utf8'));
   ok(copia.datos.visitas.registros.length === 5, 'la copia de seguridad incluye las visitas');
+
+  // --- apagar y volver a encender el módulo: lo registrado se conserva
+  await page.goto(BASE + '#/ajustes'); await esp(250);
+  await page.uncheck('input[name=visitasActivo]'); await page.click('text=Guardar ajustes'); await esp(300);
+  ok(await page.locator('nav >> text=Visitas').count() === 0, 'apagado: desaparece la pestaña Visitas');
+  await page.goto(BASE + '#/ajustes'); await esp(250);
+  await page.check('input[name=visitasActivo]'); await page.click('text=Guardar ajustes'); await esp(300);
+  await page.click('nav >> text=Visitas'); await esp(250);
+  ok(await page.locator('text=Mineras del Sur').count() === 1, 'al encenderlo otra vez, las visitas siguen ahí');
 
   ok(errores.length === 0, 'sin errores en consola' + (errores.length ? ': ' + errores.join(' | ') : ''));
   await browser.close();

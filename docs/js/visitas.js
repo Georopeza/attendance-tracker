@@ -188,7 +188,7 @@ export function editarEdad(st, id, { nombre, rango }) {
 export function archivarEdad(st, id, archivar = true) { st.visitas.edades.find(x => x.id === id).archivado = archivar; return ok(); }
 export function guardarOpciones(st, { activo, usarSexo, extras }) {
   const V = st.visitas;
-  if (activo !== undefined) V.activo = !!activo;
+  if (activo !== undefined) { V.activo = !!activo; V.elegido = true; }
   if (usarSexo !== undefined) V.usarSexo = !!usarSexo;
   if (extras) V.extras.forEach(x => { if (x.id in extras) x.activo = !!extras[x.id]; });
   return ok();

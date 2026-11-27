@@ -144,7 +144,7 @@ test('rangos de semana y mes, y datos antiguos sin el módulo se completan', () 
   assert.deepEqual(V.rangoDeSemana('2026-11-23'), ['2026-11-23', '2026-11-29']);
   assert.deepEqual(V.rangoDeMes('2026-02-01'), ['2026-02-01', '2026-02-28']);
   const viejo = conPorDefecto({ v: 1, empleados: [], tramos: [], turnos: [] });
-  assert.equal(viejo.visitas.tipos.length, 3); assert.equal(viejo.visitas.edades.length, 4); assert.equal(viejo.visitas.activo, false);
+  assert.equal(viejo.visitas.tipos.length, 3); assert.equal(viejo.visitas.edades.length, 4); assert.equal(viejo.visitas.activo, true);   // viene encendido
   assert.equal(V.dec1(12.5), '12,5'); assert.equal(V.dec1(28), '28');
 });
 
@@ -152,4 +152,15 @@ test('la copia de seguridad incluye las visitas', () => {
   const st = nuevo(); V.guardarVisita(st, visita());
   const r = A.importarCopia(A.exportarCopia(st));
   assert.ok(r.ok); assert.equal(r.datos.visitas.registros.length, 1); assert.equal(r.datos.visitas.entidades[0].nombre, 'Escuela Bolívar');
+});
+
+test('el módulo viene encendido; si se apaga a propósito, se respeta; lo no elegido vuelve al valor de fábrica', () => {
+  const st = nuevo();
+  assert.equal(st.visitas.activo, true); assert.equal(st.visitas.elegido, false);
+  assert.equal(conPorDefecto({ v: 1, empleados: [], tramos: [], turnos: [], visitas: { activo: false } }).visitas.activo, true);   // datos viejos: nadie lo eligió
+  assert.ok(V.guardarOpciones(st, { activo: false }).ok);
+  assert.equal(st.visitas.activo, false); assert.equal(st.visitas.elegido, true);
+  assert.equal(conPorDefecto(JSON.parse(JSON.stringify(st))).visitas.activo, false);                                              // apagado a propósito: se queda apagado
+  V.guardarVisita(st, visita()); V.guardarOpciones(st, { activo: true });
+  assert.equal(st.visitas.activo, true); assert.equal(st.visitas.registros.length, 1);                                           // al encenderlo, lo registrado sigue ahí
 });
