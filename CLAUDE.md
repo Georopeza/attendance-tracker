@@ -11,12 +11,13 @@ publica la raíz o `/docs`) (JavaScript sin servidor; datos en el teléfono;
 sin internet; PDF generado en el teléfono). El proyecto Django en `legado-django/`
 fue la primera versión (computador/nube) y queda **solo como referencia**; no se sigue desarrollando.
 Decisiones del coordinador: un solo usuario, sin coordinadores ni bitácora, sin nube, móvil (Android y
-iPhone), reporte en PDF (Excel descartado por ahora). Se mantiene: disponibilidad, sugerencia con registro
+iPhone), informes en PDF y Excel. Se mantiene: disponibilidad, sugerencia con registro
 de avisos, cierre de semana con versiones y motivo, copia de seguridad.
 
 Lógica en `docs/js/`: `horas.js` (cálculo puro), `acciones.js` (cambios), `servicios.js` (consultas),
-`vistas.js` (pantallas), `pdf.js`. Pruebas: `node --test pruebas/*.test.js`. Prueba de punta a punta en un
-celular simulado: `pruebas/e2e-movil.cjs` (Playwright; servir `docs/` en el puerto 8780). Ver `docs/LEEME.md`.
+`vistas.js` (pantallas), `pdf.js`, `excel.js` (Excel de horas) y el módulo de visitas: `visitas.js` (lógica pura),
+`visitas-vistas.js` (pantallas), `visitas-informes.js` (PDF y Excel de visitas), `atomos.js` (piezas visuales). Pruebas: `node --test pruebas/*.test.js`. Prueba de punta a punta en un
+celular simulado: `pruebas/e2e-movil.cjs` y `pruebas/e2e-visitas.cjs` (Playwright; servir `docs/` en el puerto 8780). Ver `docs/LEEME.md`.
 
 Lee antes de tocar nada: `documentacion/REQUISITOS.md` (qué se pidió y qué está decidido) y
 `documentacion/PLAN.md` (recorrido del proyecto).
@@ -36,6 +37,15 @@ Lee antes de tocar nada: `documentacion/REQUISITOS.md` (qué se pidió y qué es
 - Las duraciones se muestran en palabras (`hTxt`/`difTxt` en `horas.js`: "7 h 38 min"), nunca como `7:38`; las horas del reloj sí van como `09:02`. La app no ofrece datos de ejemplo: solo las pruebas los cargan (`docs/js/ejemplo.js`).
 - Colores de horas: normales verde azulado, extra tras turno azul, extra día sin turno violeta,
   "por revisar" ámbar.
+
+## Módulo de visitas (opcional)
+
+Se enciende en Ajustes y agrega la pestaña Visitas (ver `documentacion/REQUISITOS.md`, sección 11). Reglas: toda
+visita se anota (con o sin recorrido); un recorrido puede juntar varios grupos; el guía sale de la lista de
+personas; tipos de visitante, grupos de edad y extras son **configurables** (no escribir "museo", "escuela"
+ni rangos fijos en el código: los valores por defecto viven en `visitasPorDefecto()` de `store.js`). Validar
+todo antes de crear nombres o recorridos (no dejar efectos si hay error). Probar con `pruebas/visitas.test.js`,
+`pruebas/excel.test.js` y `pruebas/e2e-visitas.cjs`.
 
 ## Principio de diseño: rápido y simple
 

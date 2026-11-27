@@ -5,8 +5,8 @@ Aplicación web instalable (PWA) para llevar la asistencia y las horas. Funciona
 
 ## Qué incluye
 Hoy (marcar en el momento o al final del día), resumen semanal y mensual con desglose, cierre de semana,
-corrección de días, personas, turnos, disponibilidad, sugerencia de quién debería venir, reporte semanal y mensual
-en PDF (compartir o descargar) y copia de seguridad.
+corrección de días, personas, turnos, disponibilidad, registro de visitas con recorridos (opcional), sugerencia de quién debería venir, informes semanales y mensuales
+en PDF y Excel (compartir o descargar) y copia de seguridad.
 
 ## Probarla en un computador
 ```bash

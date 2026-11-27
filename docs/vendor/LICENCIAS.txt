@@ -1,3 +1,4 @@
 Bibliotecas incluidas (copias sin modificar, licencia MIT):
 - jsPDF 2.5.2 (https://github.com/parallax/jsPDF)
 - jsPDF-AutoTable 3.8.4 (https://github.com/simonbengtsson/jsPDF-AutoTable)
+- xlsx-js-style 1.2.0 (fork de SheetJS con estilos; https://github.com/gitbrent/xlsx-js-style), licencia Apache-2.0 (docs/vendor/xlsx.LICENSE)

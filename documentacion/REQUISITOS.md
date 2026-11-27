@@ -115,6 +115,27 @@ Resumen y hoja Detalle (totales con fórmulas) y PDF con firma del coordinador.
   El mensual es la suma de las semanas (por definir cómo se reparte una semana que cruza dos meses).
 - Historial por semana y mes.
 
+## 11. Registro de visitas (módulo opcional)
+
+Para lugares que reciben visitantes (nació para un museo): contar quién viene, de dónde y con qué recorridos.
+Se enciende en Ajustes (o en la bienvenida) y agrega la pestaña **Visitas**; la asistencia del personal sigue igual.
+
+- **Visita** = un grupo que llega. Tipos de visitante configurables (por defecto *Institución*, *Medio* y
+  *Particulares*; se agregan otros a mano: empresa, gobierno…). Los tipos "con nombre" piden el nombre
+  (se elige de una lista que se llena sola; se pueden corregir, unir y ocultar). *Particulares* no tiene nombre.
+- **Siempre** se anota la visita, haga recorrido o no, con el número de personas.
+- **Recorrido** = visita guiada, con hora y guía (el guía sale de la lista de personas de la asistencia). Un recorrido
+  puede juntar **varios grupos**. Un recorrido sin grupos desaparece.
+- **Detalle opcional:** por edad (por defecto Niños 0–12, Adolescentes 13–17, Adultos 18–59, Adultos mayores
+  60+; editables), por sexo (Mujeres/Hombres, aparte de la edad) y extras (personas con discapacidad, visitantes
+  extranjeros; apagados por defecto). Si se detalla por edad, el total se suma solo. Lo no detallado sale como
+  "sin detallar".
+- **Informes** semanal y mensual en pantalla, **PDF y Excel**: total de personas, por tipo, edad, sexo, recorridos
+  (y promedio de personas por recorrido, por guía), lista de instituciones/medios/otros con visitas, personas y
+  recorridos, y día por día. El Excel tiene hojas Resumen, Por día, Instituciones y medios, Recorridos y Visitas
+  (detalle plano para filtrar). También hay Excel de las horas del personal (semana y mes).
+- La misma persona y el mismo teléfono llevan visitas y asistencia; entra en la copia de seguridad.
+
 ## Pendientes por definir
 
 - Encabezado o logo del ente superior en los reportes.

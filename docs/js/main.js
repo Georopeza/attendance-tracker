@@ -1,6 +1,7 @@
 // Arranque, rutas y eventos. Todo se dibuja de nuevo después de cada cambio (los datos son pequeños).
 import { cargar, guardar, pedirPersistencia } from './store.js';
 import { RUTAS, acciones, formularios } from './vistas.js';
+import { alEscribirVisita, alCambiarVisita } from './visitas-vistas.js';
 import { toast, esc } from './ui.js';
 import { fijarZona } from './fechas.js';
 
@@ -8,7 +9,10 @@ const st = cargar();
 fijarZona(st.ajustes.zona);
 const ui = { modo: 'momento', fecha: null, semana: null, abiertos: new Set(), errores: {}, erroresDia: {}, valoresDia: null, verArchivados: false, vigencia: null, sugDia: null, errorDia: '' };
 const app = document.getElementById('app');
-const PESTAÑAS = [['hoy', 'Hoy', '#/hoy', 'M5 13l4 4L19 7'], ['semana', 'Semana', '#/semana', 'M4 6h16M4 12h16M4 18h10'], ['mas', 'Más', '#/mas', 'M5 12h.01M12 12h.01M19 12h.01']];
+const PESTAÑAS_BASE = [['hoy', 'Hoy', '#/hoy', 'M5 13l4 4L19 7'], ['semana', 'Semana', '#/semana', 'M4 6h16M4 12h16M4 18h10'], ['mas', 'Más', '#/mas', 'M5 12h.01M12 12h.01M19 12h.01']];
+const PESTAÑA_VISITAS = ['visitas', 'Visitas', '#/visitas', 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8'];
+// Con el módulo de visitas encendido aparece una pestaña más, después de Hoy.
+const pestañas = () => (st.visitas.activo ? [PESTAÑAS_BASE[0], PESTAÑA_VISITAS, PESTAÑAS_BASE[1], PESTAÑAS_BASE[2]] : PESTAÑAS_BASE);
 
 function ruta() {
   const p = (location.hash || '#/hoy').replace(/^#\/?/, '').split('/');
@@ -19,7 +23,7 @@ function dibujar() {
   const { p, nombre } = ruta(), r = RUTAS[nombre], y = window.scrollY;
   let html;
   try { html = r.v({ st, ui, p }); } catch (e) { console.error(e); html = `<div class="rounded-2xl bg-red-100 p-4 text-red-900">Algo salió mal al mostrar esta pantalla. Vuelve a Hoy y, si sigue, guarda una copia de seguridad.</div>`; }
-  const nav = PESTAÑAS.map(([k, t, h, d]) => `<a href="${h}" class="flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium ${r.tab === k ? 'text-blue-700' : 'text-slate-500'}" ${r.tab === k ? 'aria-current="page"' : ''}>
+  const nav = pestañas().map(([k, t, h, d]) => `<a href="${h}" class="flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium ${r.tab === k ? 'text-blue-700' : 'text-slate-500'}" ${r.tab === k ? 'aria-current="page"' : ''}>
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>${t}</a>`).join('');
   app.innerHTML = `<header class="mx-auto w-full max-w-2xl px-4 pb-1 pt-3"><div class="flex items-center gap-2"><span class="grid h-6 w-6 place-items-center rounded-md bg-blue-700 text-white" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span><span class="min-w-0"><span class="block truncate font-bold leading-tight">${esc(st.ajustes.organizacion || 'Control de Asistencia')}</span>${st.ajustes.descripcion ? `<span class="block truncate text-xs leading-tight text-slate-500">${esc(st.ajustes.descripcion)}</span>` : ''}</span></div></header>
     <main class="mx-auto w-full max-w-2xl px-4 pb-32 pt-3">${html}</main>
@@ -49,7 +53,13 @@ document.addEventListener('submit', async ev => {
   const form = ev.target.closest('form[data-f]'); if (!form) return;
   ev.preventDefault();
   const f = formularios[form.dataset.f]; if (!f) return;
-  try { persistirYDibujar(await f({ st, ui, form })); } catch (e) { console.error(e); toast('No se pudo guardar.', 'error'); }
+  try { persistirYDibujar(await f({ st, ui, form, submitter: ev.submitter })); } catch (e) { console.error(e); toast('No se pudo guardar.', 'error'); }
+});
+// Formulario de visita: se recuerda lo escrito y se actualiza el total mientras se escribe.
+document.addEventListener('input', ev => { const form = ev.target.closest('form[data-f="visita"]'); if (form) alEscribirVisita(ui, form); });
+document.addEventListener('change', ev => {
+  const form = ev.target.closest('form[data-f="visita"]');
+  if (form && alCambiarVisita(ui, form, ev.target.name)) dibujar();
 });
 document.addEventListener('toggle', ev => {
   const d = ev.target; if (!d.dataset || !d.dataset.det) return;

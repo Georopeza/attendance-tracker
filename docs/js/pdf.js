@@ -159,7 +159,7 @@ export function descargarBlob(blob, nombre) {
 export function descargarPdf(st, lunes) { const { blob, nombre } = generarPdf(st, lunes); descargarBlob(blob, nombre); }
 
 /** Abre la hoja de compartir del teléfono (WhatsApp, correo...). Si no existe, descarga el archivo. */
-async function compartirBlob(blob, nombre, titulo) {
+export async function compartirBlob(blob, nombre, titulo) {
   const file = new File([blob], nombre, { type: blob.type });
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try { await navigator.share({ files: [file], title: titulo }); return 'compartido'; }

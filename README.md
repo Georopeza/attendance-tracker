@@ -15,9 +15,11 @@ rápida y sencilla. Sirve para cualquier grupo: un salón, un taller, una escuel
 - **Mes:** suma los días del mes por persona, semana por semana, con PDF.
 - **Horas:** dentro del turno son normales; después del fin del turno, extra; sin turno, todo es extra.
   El total del día se redondea a 15 minutos (los casos intermedios se marcan *por revisar*).
+- **Visitas (opcional):** para lugares que reciben público (un museo, una tienda…): cuántas personas vienen, de qué
+  institución, medio u otro tipo, por edad y sexo, y los recorridos guiados. Informes semanal y mensual.
 - **Personas, turnos y disponibilidad** (con vigencias por fecha), y una **sugerencia** de quién debería venir
   según las horas de la semana, con registro de a quién se avisó.
-- **Copia de seguridad** en un archivo, **ajustes** (nombre y zona horaria) y **PDF** para compartir.
+- **Copia de seguridad** en un archivo, **ajustes** (nombre y zona horaria) e informes en **PDF y Excel** para compartir.
 
 ## Usarla
 Abre la dirección publicada en el teléfono y elige **Agregar a pantalla de inicio**
@@ -35,7 +37,7 @@ Abre la dirección publicada en el teléfono y elige **Agregar a pantalla de ini
 ## Desarrollo
 ```bash
 node --test pruebas/*.test.js            # lógica
-cd docs && python3 -m http.server 8780   # servir la app; luego: node pruebas/e2e-movil.cjs
+cd docs && python3 -m http.server 8780   # servir la app; luego: node pruebas/e2e-movil.cjs y pruebas/e2e-visitas.cjs
 frontend/construir.sh                    # recompilar estilos tras cambiar clases
 ```
 Al cambiar archivos de la app, sube la `VERSION` de `docs/sw.js` para que los teléfonos se actualicen.

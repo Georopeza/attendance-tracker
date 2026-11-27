@@ -1,6 +1,30 @@
 // Almacenamiento: todo vive en el teléfono (localStorage), en una sola clave.
 const CLAVE = 'asistencia:v1';
 
+/** Registro de visitas (museos, tiendas, eventos…): tipos de visitante, nombres, rangos de edad, visitas y recorridos. */
+export function visitasPorDefecto() {
+  return {
+    activo: false,
+    tipos: [
+      { id: 'inst', nombre: 'Institución', conNombre: true, archivado: false },
+      { id: 'medio', nombre: 'Medio', conNombre: true, archivado: false },
+      { id: 'part', nombre: 'Particulares', conNombre: false, archivado: false },   // sin nombre: solo se cuentan personas
+    ],
+    entidades: [],       // { id, tipoId, nombre, archivado }: instituciones, medios, etc. con nombre
+    edades: [
+      { id: 'ninos', nombre: 'Niños', rango: '0 a 12 años', archivado: false },
+      { id: 'adolescentes', nombre: 'Adolescentes', rango: '13 a 17 años', archivado: false },
+      { id: 'adultos', nombre: 'Adultos', rango: '18 a 59 años', archivado: false },
+      { id: 'mayores', nombre: 'Adultos mayores', rango: '60 años o más', archivado: false },
+    ],
+    usarSexo: true,
+    sexos: [{ id: 'm', nombre: 'Mujeres' }, { id: 'h', nombre: 'Hombres' }],
+    extras: [{ id: 'disc', nombre: 'Personas con discapacidad', activo: false }, { id: 'ext', nombre: 'Visitantes extranjeros', activo: false }],
+    registros: [],       // { id, fecha, hora, tipoId, entidadId|null, personas, edades:{id:n}, sexos:{id:n}, extras:{id:n}, recorridoId|null }
+    recorridos: [],      // { id, fecha, hora, guiaId|null }  (un recorrido puede juntar varios grupos)
+  };
+}
+
 export function estadoInicial() {
   return {
     v: 1, contador: 1,
@@ -15,13 +39,14 @@ export function estadoInicial() {
     ultimaCopia: null,    // fecha de la última copia de seguridad
     // organizacion y descripcion: salen en la app y el PDF. zona: '' = la del teléfono. bienvenida: ya se mostró el primer paso.
     ajustes: { organizacion: '', descripcion: '', zona: '', bienvenida: false },
+    visitas: visitasPorDefecto(),
   };
 }
 
 /** Completa lo que falte (datos de versiones anteriores o copias viejas). */
 export function conPorDefecto(d) {
   const base = estadoInicial();
-  return { ...base, ...d, ajustes: { ...base.ajustes, ...(d.ajustes || {}) } };
+  return { ...base, ...d, ajustes: { ...base.ajustes, ...(d.ajustes || {}) }, visitas: { ...base.visitas, ...(d.visitas || {}) } };
 }
 
 export function cargar() {

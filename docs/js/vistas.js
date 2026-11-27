@@ -5,18 +5,13 @@ import * as S from './servicios.js';
 import * as A from './acciones.js';
 import { esc, toast, confirmar, formulario } from './ui.js';
 import { guardar, estadoInicial, pedirPersistencia } from './store.js';
-import { compartirPdf, descargarPdf, compartirPdfMes, descargarPdfMes, compartirArchivo } from './pdf.js';
+import { generarPdf, generarPdfMes, descargarBlob, compartirBlob, compartirArchivo } from './pdf.js';
 
-// ---------- átomos ----------
-const tarjeta = (c, clase = '') => `<section class="rounded-2xl border border-slate-200 bg-white p-4 ${clase}">${c}</section>`;
-const titulo = (t, sub = '') => `<div class="mb-4"><h1 class="text-2xl font-bold tracking-tight">${t}</h1>${sub ? `<p class="mt-1 text-sm text-slate-500">${sub}</p>` : ''}</div>`;
-const boton = (txt, data, clase = 'border border-slate-300 bg-white') => `<button ${data} class="min-h-[44px] rounded-xl px-4 text-sm font-medium ${clase}">${txt}</button>`;
-const botonPri = (txt, data) => boton(txt, data, 'bg-blue-700 text-white font-semibold');
-const pildora = (txt, c) => `<span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${c}">${txt}</span>`;
-const vacio = (t, extra = '') => tarjeta(`<p class="text-slate-600">${t}</p>${extra}`);
-const volver = (href, txt = 'Volver') => `<a href="${href}" class="mb-3 inline-flex min-h-[44px] items-center text-sm font-medium text-blue-700">← ${txt}</a>`;
-const stepper = (izq, centro, der) => `<div class="flex items-center justify-between gap-2">${izq}<div class="text-center">${centro}</div>${der}</div>`;
-const flecha = (txt, data, label, off = false) => `<button ${data} aria-label="${label}" ${off ? 'disabled' : ''} class="h-11 w-11 rounded-xl border border-slate-300 bg-white text-lg disabled:opacity-30">${txt}</button>`;
+import { tarjeta, titulo, boton, botonPri, pildora, vacio, volver, stepper, flecha, botonesExportar } from './atomos.js';
+import * as V from './visitas.js';
+import { RUTAS_VISITAS, accionesVisitas, formulariosVisitas, rangoInforme } from './visitas-vistas.js';
+import { pdfVisitas, excelVisitas } from './visitas-informes.js';
+import { excelHorasSemana, excelHorasMes } from './excel.js';
 
 // ================= HOY =================
 function tarjetaEmpleado(st, ui, emp, fecha, esHoy) {
@@ -81,6 +76,8 @@ function vistaBienvenida({ st }) {
       ${tarjeta(`<label for="b-personas" class="mb-1 block text-sm font-medium text-slate-700">Personas a las que les llevarás la asistencia</label>
         <textarea id="b-personas" name="personas" rows="5" placeholder="Una por línea&#10;Ana Pérez&#10;Luis Mora" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base"></textarea>
         <p class="mt-1 text-xs text-slate-500">Puedes agregar más después, en Más → Personas.</p>`)}
+      ${tarjeta(`<label class="flex min-h-[44px] cursor-pointer items-start gap-3"><input type="checkbox" name="visitasActivo" class="mt-0.5 h-6 w-6 accent-blue-700">
+        <span class="text-sm"><b class="block">También quiero contar las visitas que recibo</b><span class="text-slate-500">Personas, instituciones, medios y recorridos (por ejemplo, en un museo). Se puede activar después en Más → Ajustes.</span></span></label>`)}
       <p class="text-sm text-slate-500">Hora detectada: <b>${deMin(a.min)}</b> (${esc(zonaActiva())}). Se puede cambiar en Ajustes.</p>
       <button class="min-h-[56px] w-full rounded-xl bg-blue-700 text-lg font-semibold text-white">Empezar</button>
       <button type="button" data-a="omitir-bienvenida" class="min-h-[48px] w-full rounded-xl text-sm font-medium text-slate-600 underline">Omitir por ahora</button></form>`;
@@ -152,7 +149,7 @@ function vistaSemana({ st, ui }) {
     : `<div class="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-teal-100 p-4 text-sm text-teal-900"><span><b>Semana abierta.</b> Los totales se actualizan al marcar.</span>${boton('Cerrar semana', 'data-a="cerrar-semana"', 'bg-white font-semibold')}</div>`;
   const cabeza = `${conmutador('semana')}<div class="mb-4 space-y-3">${stepper(flecha('←', 'data-a="sem" data-d="-7"', 'Semana anterior'),
     `<h1 class="text-xl font-bold">Semana ${rangoSemana(lunes)}</h1><p class="text-sm text-slate-500">de lunes a domingo</p>`, flecha('→', 'data-a="sem" data-d="7"', 'Semana siguiente'))}
-    <div class="grid grid-cols-2 gap-2">${botonPri('Compartir PDF', 'data-a="pdf-compartir"')}${boton('Descargar PDF', 'data-a="pdf-descargar"')}</div></div>`;
+    ${botonesExportar('horas-semana')}</div>`;
   if (!filas.length) return cabeza + vacio('No hay personas activas.');
   const cards = filas.map(f => `<article class="rounded-2xl border border-slate-200 bg-white p-4">
     <div class="flex items-start justify-between gap-3"><div class="min-w-0"><strong class="text-lg">${esc(f.emp.nombre)}</strong>
@@ -192,7 +189,7 @@ function vistaMes({ st, ui }) {
   const { filas, promedio } = S.resumenMes(st, mes), total = filas.reduce((s, f) => s + f.total, 0);
   const cabeza = `${conmutador('mes')}<div class="mb-4 space-y-3">${stepper(flecha('←', 'data-a="mes-nav" data-d="-1"', 'Mes anterior'),
     `<h1 class="text-xl font-bold first-letter:uppercase">${nombreMes(mes)}</h1><p class="text-sm text-slate-500">${enCurso ? 'mes en curso' : 'del 1 al último día'}</p>`, flecha('→', 'data-a="mes-nav" data-d="1"', 'Mes siguiente'))}
-    <div class="grid grid-cols-2 gap-2">${botonPri('Compartir PDF', 'data-a="pdf-mes-compartir"')}${boton('Descargar PDF', 'data-a="pdf-mes-descargar"')}</div></div>`;
+    ${botonesExportar('horas-mes')}</div>`;
   if (!filas.length) return cabeza + vacio('No hay personas activas.');
   const nota = `<p class="mb-4 rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-600">Aquí se suman todos los días del mes. <b>Cada semana sigue empezando en cero</b> en la pestaña Semana. Una semana que cruza dos meses se reparte según el día.</p>`;
   const cards = filas.map(f => `<article class="rounded-2xl border border-slate-200 bg-white p-4">
@@ -313,6 +310,7 @@ function vistaMas({ st }) {
   const a = ahora();
   return `${titulo('Más')}<div class="space-y-3">${fila('#/empleados', 'Personas', 'Agregar, editar o archivar')}${fila('#/disponibilidad', 'Disponibilidad', 'Qué días y horas puede venir cada persona')}
     ${fila('#/sugerencia', '¿Quién debería venir?', 'Sugerencia según las horas de la semana')}${fila('#/turnos', 'Turnos', 'El horario normal y los cambios por fecha')}</div>
+    ${st.visitas.activo ? fila('#/visitas/config', 'Configurar visitas', 'Tipos de visitante, grupos de edad y nombres') : ''}
     ${fila('#/ajustes', 'Ajustes', 'Nombre que aparece en la app y el PDF, y zona horaria')}
     <h2 class="mb-2 mt-7 text-lg font-semibold">Copia de seguridad</h2>
     ${tarjeta(`<p class="text-sm text-slate-600">Tus datos están solo en este teléfono. Si borras los datos del navegador o cambias de teléfono, se pierden. Guarda una copia cada semana y envíatela por WhatsApp o correo.</p>
@@ -346,6 +344,8 @@ function vistaAjustes({ st }) {
       ${tarjeta(`<label class="mb-1 block text-sm text-slate-600" for="aj-zona">Zona horaria</label>
         <select id="aj-zona" name="zona" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base">${opciones.map(([v, l]) => `<option value="${esc(v)}" ${v === actual ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
         <p class="mt-2 text-sm text-slate-600">Ahora son <b>${deMin(a.min)}</b> del ${fechaLarga(a.fecha)}. Las marcas “Entró” y “Salió” usan esta hora.</p>`)}
+      ${tarjeta(`<label class="flex min-h-[44px] cursor-pointer items-start gap-3"><input type="checkbox" name="visitasActivo" ${st.visitas.activo ? 'checked' : ''} class="mt-0.5 h-6 w-6 accent-blue-700">
+        <span class="text-sm"><b class="block">Llevar también el registro de visitas</b><span class="text-slate-500">Para museos, tiendas, eventos…: cuántas personas vienen, de qué institución o medio, y los recorridos. Agrega una pestaña "Visitas".</span></span></label>`)}
       <button class="min-h-[56px] w-full rounded-xl bg-blue-700 text-lg font-semibold text-white">Guardar ajustes</button></form>`;
 }
 
@@ -353,7 +353,7 @@ function vistaAjustes({ st }) {
 export const RUTAS = {
   hoy: { v: vistaHoy, tab: 'hoy' }, mes: { v: c => (c.p[1] ? vistaMesPersona(c) : vistaMes(c)), tab: 'semana' }, dia: { v: vistaDia, tab: 'hoy' }, semana: { v: c => (c.p[1] ? vistaDesglose(c) : vistaSemana(c)), tab: 'semana' },
   empleados: { v: vistaEmpleados, tab: 'mas' }, turnos: { v: vistaTurnos, tab: 'mas' }, disponibilidad: { v: vistaDisponibilidad, tab: 'mas' },
-  disp: { v: vistaFicha, tab: 'mas' }, ajustes: { v: vistaAjustes, tab: 'mas' }, sugerencia: { v: vistaSugerencia, tab: 'mas' }, mas: { v: vistaMas, tab: 'mas' },
+  disp: { v: vistaFicha, tab: 'mas' }, ajustes: { v: vistaAjustes, tab: 'mas' }, ...RUTAS_VISITAS, sugerencia: { v: vistaSugerencia, tab: 'mas' }, mas: { v: vistaMas, tab: 'mas' },
 };
 
 // ================= ACCIONES =================
@@ -361,7 +361,28 @@ export const RUTAS = {
 const fallo = r => { if (r.error) { toast(r.error, 'error'); return true; } return false; };
 const nombreDe = (st, id) => S.empleado(st, id)?.nombre || '';
 
+// Un solo punto para compartir o descargar cualquier informe (PDF o Excel).
+async function exportar({ st, ui, d }) {
+  const a = ahora();
+  const lunes = ui.semana || lunesDe(a.fecha), mes = ui.mes || primerDiaMes(a.fecha);
+  const generar = {
+    'horas-semana': () => (d.f === 'pdf' ? generarPdf(st, lunes) : excelHorasSemana(st, lunes)),
+    'horas-mes': () => (d.f === 'pdf' ? generarPdfMes(st, mes) : excelHorasMes(st, mes)),
+    'visitas-semana': () => { const r = rangoInforme(ui, 'semana'), n = `visitas-semana-${r.lunes}.${d.f}`; return d.f === 'pdf' ? pdfVisitas(st, r.desde, r.hasta, 'Semana', n) : excelVisitas(st, r.desde, r.hasta, 'Semana', n); },
+    'visitas-mes': () => { const r = rangoInforme(ui, 'mes'), n = `visitas-mes-${r.mes.slice(0, 7)}.${d.f}`; return d.f === 'pdf' ? pdfVisitas(st, r.desde, r.hasta, r.etiqueta, n) : excelVisitas(st, r.desde, r.hasta, r.etiqueta, n); },
+  }[d.t];
+  if (!generar) return false;
+  let r;
+  try { r = generar(); } catch (e) { console.error(e); toast('No se pudo crear el archivo.', 'error'); return false; }
+  const titulo = d.t.startsWith('visitas') ? 'Informe de visitas' : 'Resumen de horas';
+  if (d.m === 'compartir') { const res = await compartirBlob(r.blob, r.nombre, titulo); if (res === 'descargado') toast('Archivo guardado en tu teléfono.'); }
+  else { descargarBlob(r.blob, r.nombre); toast('Archivo guardado en tu teléfono.'); }
+  return false;
+}
+
 export const acciones = {
+  ...accionesVisitas,
+  exportar,
   'omitir-bienvenida': ({ st }) => { st.ajustes.bienvenida = true; return true; },
   ir: (c) => { location.hash = c.d.h; return false; },
   modo: ({ d, ui }) => { ui.modo = d.m; ui.erroresDia = {}; ui.valoresDia = null; return false; },
@@ -398,8 +419,6 @@ export const acciones = {
 
   'mes-nav': ({ d, ui }) => { ui.mes = sumarMeses(ui.mes || primerDiaMes(ahora().fecha), Number(d.d)); return false; },
   'ver-semana': ({ d, ui }) => { ui.semana = d.l; location.hash = `#/semana/${d.id}`; return null; },
-  'pdf-mes-compartir': async ({ st, ui }) => { const r = await compartirPdfMes(st, ui.mes || primerDiaMes(ahora().fecha)); if (r === 'descargado') toast('PDF guardado en tu teléfono.'); return false; },
-  'pdf-mes-descargar': ({ st, ui }) => { descargarPdfMes(st, ui.mes || primerDiaMes(ahora().fecha)); toast('PDF guardado en tu teléfono.'); return false; },
   sem: ({ d, ui }) => { ui.semana = sumarDias(ui.semana || lunesDe(ahora().fecha), Number(d.d)); return false; },
   'cerrar-semana': async ({ st, ui }) => {
     const lunes = ui.semana || lunesDe(ahora().fecha), ult = S.ultimoCierre(st, lunes);
@@ -408,9 +427,6 @@ export const acciones = {
     if (!ok) return false;
     const r = A.cerrarSemana(st, lunes); toast(`Semana cerrada (versión ${r.version}).`); return true;
   },
-  'pdf-compartir': async ({ st, ui }) => { const r = await compartirPdf(st, ui.semana || lunesDe(ahora().fecha)); if (r === 'descargado') toast('PDF guardado en tu teléfono.'); return false; },
-  'pdf-descargar': ({ st, ui }) => { descargarPdf(st, ui.semana || lunesDe(ahora().fecha)); toast('PDF guardado en tu teléfono.'); return false; },
-
   'agregar-emp': async ({ st }) => {
     const v = await formulario({ titulo: 'Nueva persona', campos: [{ n: 'nombre', t: 'text', l: 'Nombre' }], boton: 'Agregar' });
     if (!v) return false;
@@ -497,14 +513,17 @@ export const acciones = {
 };
 
 export const formularios = {
+  ...formulariosVisitas,
   bienvenida: ({ st, form }) => {
     const f = new FormData(form), r = A.configuracionInicial(st, { organizacion: f.get('organizacion'), descripcion: f.get('descripcion'), personas: f.get('personas') });
     if (r.error) { toast(r.error, 'error'); return false; }
+    if (f.get('visitasActivo') === 'on') V.guardarOpciones(st, { activo: true });
     toast(r.agregadas ? `Listo. ${r.agregadas} ${r.agregadas === 1 ? 'persona agregada' : 'personas agregadas'}.` : 'Listo. Agrega personas cuando quieras.'); return true;
   },
   ajustes: ({ st, form }) => {
     const f = new FormData(form), r = A.guardarAjustes(st, { organizacion: f.get('organizacion'), descripcion: f.get('descripcion'), zona: f.get('zona') });
     if (r.error) { toast(r.error, 'error'); return false; }
+    V.guardarOpciones(st, { activo: f.get('visitasActivo') === 'on' });
     fijarZona(st.ajustes.zona); toast('Ajustes guardados.'); return true;
   },
   'guardar-dia': ({ st, ui, form }) => {
