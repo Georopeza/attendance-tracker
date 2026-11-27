@@ -1,6 +1,6 @@
 // Service worker: guarda la app en el teléfono para que abra y funcione sin internet.
 // Al cambiar cualquier archivo de la app, sube el número de VERSION.
-const VERSION = 'asistencia-v10';
+const VERSION = 'asistencia-v11';
 const ARCHIVOS = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/main.js', 'js/vistas.js', 'js/acciones.js', 'js/servicios.js', 'js/horas.js', 'js/fechas.js', 'js/store.js', 'js/ui.js', 'js/pdf.js', 'js/ejemplo.js', 'js/atomos.js', 'js/excel.js', 'js/visitas.js', 'js/visitas-vistas.js', 'js/visitas-informes.js',
@@ -15,6 +15,7 @@ self.addEventListener('activate', e => {
 // Primero lo guardado; si no está, internet (y se guarda para la próxima).
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  if (new URL(e.request.url).searchParams.has('red')) return;   // '?red': ir directo a internet (lo usa el botón "Actualizar la aplicación")
   e.respondWith(caches.match(e.request, { ignoreSearch: true }).then(hit => hit || fetch(e.request).then(r => {
     if (r.ok && new URL(e.request.url).origin === location.origin) { const copia = r.clone(); caches.open(VERSION).then(c => c.put(e.request, copia)); }
     return r;

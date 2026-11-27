@@ -61,7 +61,7 @@ El uso diario es **marcar y listo**. La pantalla Hoy es la principal y debe segu
 
 ## Comandos
 
-PWA: `node --test pruebas/*.test.js` y `frontend/construir.sh` (estilos). Subir `VERSION` en `docs/sw.js` al cambiar la app.
+PWA: `node --test pruebas/*.test.js` y `frontend/construir.sh` (estilos). Subir `VERSION` en `docs/sw.js` al cambiar la app (el botón Más → "Buscar y actualizar" compara esa versión con la de internet; `pruebas/e2e-actualizar.cjs` lo comprueba). El service worker deja pasar directo a internet cualquier petición con `?red`.
 Versión Django (referencia, dentro de `legado-django/`):
 
 ```bash

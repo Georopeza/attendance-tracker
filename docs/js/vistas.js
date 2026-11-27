@@ -317,6 +317,9 @@ function vistaMas({ st }) {
       <p class="mt-2 text-sm">${st.ultimaCopia ? `Última copia: <b>${fechaCompleta(st.ultimaCopia)}</b>` : '<b class="text-amber-800">Todavía no has guardado una copia.</b>'}</p>
       <div class="mt-3 grid gap-2">${botonPri('Guardar copia y enviarla', 'data-a="copia-guardar"')}
       <label class="flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl border border-slate-300 bg-white text-sm font-medium">Restaurar una copia<input type="file" accept=".json,application/json" data-a="copia-restaurar" class="sr-only"></label></div>`)}
+    <h2 class="mb-2 mt-7 text-lg font-semibold">Actualizar la aplicación</h2>
+    ${tarjeta(`<p class="text-sm text-slate-600">Cuando haya una versión nueva, tócalo con internet. Tus datos no se tocan: solo se vuelve a descargar la aplicación.</p>
+      <div class="mt-3">${boton('Buscar y actualizar', 'data-a="actualizar-app"')}</div>`)}
     <h2 class="mb-2 mt-7 text-lg font-semibold">Instalar en el teléfono</h2>
     ${tarjeta(`<p class="text-sm text-slate-600"><b>Android (Chrome):</b> menú ⋮ → “Instalar aplicación” o “Agregar a pantalla de inicio”.</p>
       <p class="mt-2 text-sm text-slate-600"><b>iPhone (Safari):</b> botón Compartir → “Agregar a pantalla de inicio”. Ábrela siempre desde ese ícono.</p>
@@ -380,7 +383,28 @@ async function exportar({ st, ui, d }) {
   return false;
 }
 
+// Busca una versión nueva en internet y, si la hay, vuelve a descargar toda la aplicación. Los datos no se tocan.
+const versionDe = texto => (/VERSION\s*=\s*'([^']+)'/.exec(texto) || [])[1];
+async function actualizarApp() {
+  let instalada, ultima;
+  try {
+    instalada = versionDe(await (await fetch('sw.js')).text());                                   // la guardada en el teléfono
+    ultima = versionDe(await (await fetch(`sw.js?red=${Date.now()}`, { cache: 'no-store' })).text()); // la de internet
+  } catch (e) { toast('No hay conexión a internet. Inténtalo de nuevo cuando la tengas.', 'error'); return false; }
+  if (!ultima) { toast('No se pudo comprobar. Inténtalo de nuevo.', 'error'); return false; }
+  if (ultima === instalada) { toast('Ya tienes la última versión.'); return false; }
+  toast('Actualizando…');
+  try {
+    for (const k of await caches.keys()) await caches.delete(k);
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for (const r of regs) await r.unregister();
+  } catch (e) { /* si algo falla, se recarga igual */ }
+  location.reload();
+  return null;
+}
+
 export const acciones = {
+  'actualizar-app': actualizarApp,
   ...accionesVisitas,
   exportar,
   'omitir-bienvenida': ({ st }) => { st.ajustes.bienvenida = true; return true; },
