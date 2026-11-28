@@ -11,6 +11,7 @@ import { tarjeta, titulo, boton, botonPri, pildora, vacio, volver, stepper, flec
 import * as V from './visitas.js';
 import { RUTAS_VISITAS, accionesVisitas, formulariosVisitas, rangoInforme } from './visitas-vistas.js';
 import { pdfVisitas, excelVisitas } from './visitas-informes.js';
+import { RUTAS_EDITAR_SEMANA, accionesEditarSemana } from './editar-semana.js';
 import { excelHorasSemana, excelHorasMes } from './excel.js';
 
 // ================= HOY: elegir varias personas =================
@@ -128,6 +129,8 @@ function vistaHoy({ st, ui }) {
   return recordatorio + cab + `<form data-f="guardar-dia"><p class="mb-3 text-sm text-slate-600">Marca quién vino. El horario del turno ya está puesto: cambia solo las horas que difieran.</p>
     <div class="mb-3 flex gap-2">${boton('Todos vinieron', 'type="button" data-a="todos" data-v="1"')}${boton('Nadie', 'type="button" data-a="todos" data-v="0"')}</div>
     <div class="divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white">${activos.map(e => filaDia(st, ui, e, fecha, ini, fin)).join('')}</div>
+    ${S.ultimoCierre(st, lunesDe(fecha)) ? `<div class="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900"><b>Esa semana ya fue entregada.</b> Los cambios se mostrarán como diferencia contra lo entregado.
+      <input name="motivo" required placeholder="Motivo del cambio (obligatorio)" class="mt-2 w-full rounded-lg border border-blue-300 bg-white px-3 py-2.5 text-base"></div>` : ''}
     <button class="mt-4 min-h-[56px] w-full rounded-xl bg-blue-700 text-lg font-semibold text-white">Guardar el día</button>
     <p class="mt-2 text-xs text-slate-500">Quien está sin marcar queda sin asistencia ese día. Si alguien ya tenía horas y lo desmarcas, se quitan.</p></form>`;
 }
@@ -169,7 +172,8 @@ function vistaSemana({ st, ui }) {
     : `<div class="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-teal-100 p-4 text-sm text-teal-900"><span><b>Semana abierta.</b> Los totales se actualizan al marcar.</span>${boton('Cerrar semana', 'data-a="cerrar-semana"', 'bg-white font-semibold')}</div>`;
   const cabeza = `${conmutador('semana')}<div class="mb-4 space-y-3">${stepper(flecha('←', 'data-a="sem" data-d="-7"', 'Semana anterior'),
     `<h1 class="text-xl font-bold">Semana ${rangoSemana(lunes)}</h1><p class="text-sm text-slate-500">de lunes a domingo</p>`, flecha('→', 'data-a="sem" data-d="7"', 'Semana siguiente'))}
-    ${botonesExportar('horas-semana')}</div>`;
+    ${botonesExportar('horas-semana')}
+    <a href="#/editar-semana" class="flex min-h-[48px] items-center justify-center rounded-xl border border-blue-300 bg-blue-50 px-4 text-sm font-semibold text-blue-800">Registrar o corregir las horas de esta semana</a></div>`;
   if (!filas.length) return cabeza + vacio('No hay personas activas.');
   const cards = filas.map(f => `<article class="rounded-2xl border border-slate-200 bg-white p-4">
     <div class="flex items-start justify-between gap-3"><div class="min-w-0"><strong class="text-lg">${esc(f.emp.nombre)}</strong>
@@ -376,7 +380,7 @@ function vistaAjustes({ st }) {
 export const RUTAS = {
   hoy: { v: vistaHoy, tab: 'hoy', ancho: true }, mes: { v: c => (c.p[1] ? vistaMesPersona(c) : vistaMes(c)), tab: 'semana', ancho: true }, dia: { v: vistaDia, tab: 'hoy' }, semana: { v: c => (c.p[1] ? vistaDesglose(c) : vistaSemana(c)), tab: 'semana', ancho: true },
   empleados: { v: vistaEmpleados, tab: 'mas' }, turnos: { v: vistaTurnos, tab: 'mas' }, disponibilidad: { v: vistaDisponibilidad, tab: 'mas' },
-  disp: { v: vistaFicha, tab: 'mas' }, ajustes: { v: vistaAjustes, tab: 'mas' }, ...RUTAS_VISITAS, sugerencia: { v: vistaSugerencia, tab: 'mas' }, mas: { v: vistaMas, tab: 'mas' },
+  disp: { v: vistaFicha, tab: 'mas' }, ajustes: { v: vistaAjustes, tab: 'mas' }, ...RUTAS_VISITAS, ...RUTAS_EDITAR_SEMANA, sugerencia: { v: vistaSugerencia, tab: 'mas' }, mas: { v: vistaMas, tab: 'mas' },
 };
 
 // ================= ACCIONES =================
@@ -426,6 +430,7 @@ async function actualizarApp() {
 export const acciones = {
   'actualizar-app': actualizarApp,
   ...accionesVisitas,
+  ...accionesEditarSemana,
   exportar,
   'omitir-bienvenida': ({ st }) => { st.ajustes.bienvenida = true; return true; },
   ir: (c) => { location.hash = c.d.h; return false; },
@@ -586,8 +591,8 @@ export const formularios = {
   'guardar-dia': ({ st, ui, form }) => {
     const fecha = ui.fecha || ahora().fecha, f = new FormData(form), filas = {};
     for (const e of S.empleadosActivos(st)) filas[e.id] = { vino: f.get(`vino-${e.id}`) === 'on', entrada: f.get(`entrada-${e.id}`) || '', salida: f.get(`salida-${e.id}`) || '' };
-    const r = A.guardarDia(st, fecha, filas);
-    if (r.error) { ui.erroresDia = r.errores; ui.valoresDia = filas; toast('Revisa las horas marcadas en rojo.', 'error'); return false; }
+    const r = A.guardarDia(st, fecha, filas, f.get('motivo') || '');
+    if (r.error) { ui.erroresDia = r.errores || {}; ui.valoresDia = filas; toast(r.motivoRequerido ? r.error : 'Revisa las horas marcadas en rojo.', 'error'); return false; }
     ui.erroresDia = {}; ui.valoresDia = null;
     toast(r.cambios ? `Día guardado (${r.cambios} cambios).` : 'No había cambios que guardar.'); return true;
   },

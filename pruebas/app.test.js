@@ -290,3 +290,53 @@ test('marcar a varios: validaciones y nada a medias', () => {
   assert.equal(e.hechos, 0); assert.match(e.omitidos[0].motivo, /anterior a la entrada/);
   assert.equal(S.tramosDelDia(st, ana, HOY)[0].salida, null);                            // lo de Ana no se alteró
 });
+
+test('guardarDia en una semana ya entregada pide motivo y lo deja anotado', () => {
+  const st = nuevo('Ana'), ana = id(st, 'Ana'), f = '2026-11-17'; reloj(10 * 60);
+  A.cerrarSemana(st, '2026-11-16');
+  const sin = A.guardarDia(st, f, { [ana]: { vino: true, entrada: '09:00', salida: '16:00' } });
+  assert.ok(sin.motivoRequerido); assert.match(sin.error, /motivo/); assert.equal(st.tramos.length, 0);
+  const con = A.guardarDia(st, f, { [ana]: { vino: true, entrada: '09:00', salida: '16:00' } }, 'se olvidó anotar');
+  assert.ok(con.ok); assert.equal(st.correcciones.length, 1); assert.equal(st.correcciones[0].motivo, 'se olvidó anotar');
+});
+
+test('registrar una semana que ya pasó: varios días y varias personas de una vez', () => {
+  const st = nuevo('Ana', 'Luis'), [ana, luis] = ['Ana', 'Luis'].map(n => id(st, n)); reloj(10 * 60);
+  const lunes = '2026-11-16', dia = n => sumarDias(lunes, n);
+  const items = [];
+  for (let d = 0; d < 5; d++) items.push({ empId: ana, fecha: dia(d), vino: true, entrada: '09:00', salida: '16:00' });
+  items.push({ empId: luis, fecha: dia(0), vino: true, entrada: '09:02', salida: '16:40' }, { empId: luis, fecha: dia(5), vino: true, entrada: '09:00', salida: '13:00' },
+    { empId: luis, fecha: dia(1), vino: false, entrada: '', salida: '' });                                    // "no vino" y sin datos: no hace nada
+  const r = A.guardarSemana(st, items);
+  assert.ok(r.ok); assert.equal(r.cambios, 7);
+  assert.equal(S.resumenSemana(st, lunes).filas.find(f => f.emp.id === ana).total, 35 * 60);
+  assert.equal(S.resumenSemana(st, lunes).filas.find(f => f.emp.id === luis).total, 7 * 60 + 38 + 4 * 60);
+  // corregir un error de esa semana (Ana salió a las 15:00 el miércoles) y quitar un día mal puesto
+  const c = A.guardarSemana(st, [{ empId: ana, fecha: dia(2), vino: true, entrada: '09:00', salida: '15:00' }, { empId: ana, fecha: dia(4), vino: false, entrada: '', salida: '' }]);
+  assert.ok(c.ok); assert.equal(c.cambios, 2);
+  assert.equal(S.resumenSemana(st, lunes).filas.find(f => f.emp.id === ana).total, (7 + 7 + 6 + 7) * 60);
+});
+
+test('guardar una semana es todo o nada, y no acepta fechas futuras ni a quien tiene varios tramos', () => {
+  const st = nuevo('Ana', 'Luis'), [ana, luis] = ['Ana', 'Luis'].map(n => id(st, n)); reloj(10 * 60);
+  st.tramos.push({ id: 970, empId: luis, fecha: '2026-11-17', entrada: 480, salida: 660 }, { id: 971, empId: luis, fecha: '2026-11-17', entrada: 840, salida: 960 });
+  const r = A.guardarSemana(st, [
+    { empId: ana, fecha: '2026-11-16', vino: true, entrada: '09:00', salida: '16:00' },       // bien
+    { empId: ana, fecha: '2026-11-17', vino: true, entrada: '16:00', salida: '09:00' },       // salida antes de la entrada
+    { empId: ana, fecha: '2026-11-18', vino: true, entrada: '09:00', salida: '' },            // falta la salida (día pasado)
+    { empId: ana, fecha: '2026-11-30', vino: true, entrada: '09:00', salida: '16:00' },       // futuro
+    { empId: luis, fecha: '2026-11-17', vino: false, entrada: '', salida: '' }]);              // varios tramos: se respeta
+  assert.ok(r.error); assert.equal(Object.keys(r.errores).length, 3);
+  assert.match(r.errores[`${ana}|2026-11-17`], /anterior a la entrada/); assert.match(r.errores[`${ana}|2026-11-18`], /salida/); assert.match(r.errores[`${ana}|2026-11-30`], /futura/);
+  assert.equal(S.tramosDelDia(st, ana, '2026-11-16').length, 0);                              // lo bueno tampoco se guardó
+  assert.equal(S.tramosDelDia(st, luis, '2026-11-17').length, 2);
+  const ok2 = A.guardarSemana(st, [{ empId: luis, fecha: '2026-11-17', vino: false, entrada: '', salida: '' }]);
+  assert.ok(ok2.ok); assert.deepEqual(ok2.omitidos, [`${luis}|2026-11-17`]); assert.equal(ok2.cambios, 0);
+});
+
+test('hoy: no se aceptan horas que todavía no han llegado al guardar el día', () => {
+  const st = nuevo('Ana'), ana = id(st, 'Ana'); reloj(10 * 60);
+  const r = A.guardarDia(st, HOY, { [ana]: { vino: true, entrada: '09:00', salida: '11:00' } });
+  assert.match(r.errores[ana], /todavía no ha llegado/);
+  assert.ok(A.guardarDia(st, HOY, { [ana]: { vino: true, entrada: '09:00', salida: '' } }).ok);   // sigue presente
+});

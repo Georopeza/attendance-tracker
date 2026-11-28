@@ -138,32 +138,60 @@ export function bloque(st, que, hora) {
   return ok({ hechos, omitidos, hora: h });
 }
 
-/** Modo "al final del día": el día queda igual a lo que muestra el formulario.
- *  filas: { [empId]: { vino, entrada:'HH:MM', salida:'HH:MM' } } */
-export function guardarDia(st, fecha, filas) {
-  const esHoy = fecha === ahora().fecha;
-  const errores = {}, plan = [];
-  for (const emp of empleadosActivos(st)) {
-    const f = filas[emp.id];
-    if (!f) continue;
-    const tramos = tramosDelDia(st, emp.id, fecha);
-    if (tramos.length > 1) continue; // varios tramos: se corrigen desde "Corregir el día"
-    if (!f.vino) { if (tramos.length) plan.push({ tipo: 'borrar', emp, t: tramos[0] }); continue; }
-    if (!f.entrada) { errores[emp.id] = 'Falta la hora de entrada.'; continue; }
-    if (!f.salida && !esHoy) { errores[emp.id] = 'Falta la hora de salida.'; continue; }
-    const entrada = aMin(f.entrada), salida = f.salida ? aMin(f.salida) : null;
+// ---------- guardar días completos (al final del día y semanas enteras) ----------
+const cerradaLa = (st, fecha) => !!ultimoCierre(st, lunesDe(fecha));
+
+/** Convierte filas { empId, fecha, vino, entrada:'HH:MM', salida:'HH:MM' } en cambios concretos, validando todo.
+ *  Quien tiene varios tramos ese día no se toca (se corrige desde "Corregir el día"). */
+function planificar(st, items) {
+  const a = ahora(), plan = [], errores = {}, omitidos = [];
+  for (const it of items) {
+    const key = `${it.empId}|${it.fecha}`, esHoy = it.fecha === a.fecha;
+    if (it.fecha > a.fecha) { errores[key] = 'La fecha no puede ser futura.'; continue; }
+    const tramos = tramosDelDia(st, it.empId, it.fecha);
+    if (tramos.length > 1) { omitidos.push(key); continue; }
+    if (!it.vino) { if (tramos.length) plan.push({ tipo: 'borrar', empId: it.empId, fecha: it.fecha, t: tramos[0] }); continue; }
+    if (!it.entrada) { errores[key] = 'Falta la hora de entrada.'; continue; }
+    if (!it.salida && !esHoy) { errores[key] = 'Falta la hora de salida.'; continue; }
+    const entrada = aMin(it.entrada), salida = it.salida ? aMin(it.salida) : null;
     const e = validarTramos([{ entrada, salida }]);
-    if (e) { errores[emp.id] = e; continue; }
+    if (e) { errores[key] = e; continue; }
+    if (esHoy && (entrada > a.min || (salida != null && salida > a.min))) { errores[key] = 'Esa hora todavía no ha llegado.'; continue; }
     if (tramos.length && tramos[0].entrada === entrada && tramos[0].salida === salida) continue;
-    plan.push({ tipo: tramos.length ? 'editar' : 'crear', emp, t: tramos[0], entrada, salida });
+    plan.push({ tipo: tramos.length ? 'editar' : 'crear', empId: it.empId, fecha: it.fecha, t: tramos[0], entrada, salida });
   }
+  return { plan, errores, omitidos };
+}
+
+/** Aplica el plan. Si algún cambio cae en una semana ya entregada, pide el motivo y lo deja anotado. */
+function aplicar(st, { plan, errores, omitidos }, motivo, claveError) {
   if (Object.keys(errores).length) return { error: 'Hay horas por corregir.', errores };
+  motivo = (motivo || '').trim();
+  const enCerradas = plan.filter(p => cerradaLa(st, p.fecha));
+  if (enCerradas.length && !motivo) return { error: 'Esa semana ya fue entregada: escribe el motivo del cambio.', motivoRequerido: true };
   for (const p of plan) {
     if (p.tipo === 'borrar') st.tramos = st.tramos.filter(t => t !== p.t);
     else if (p.tipo === 'editar') Object.assign(p.t, { entrada: p.entrada, salida: p.salida });
-    else st.tramos.push({ id: nuevoId(st), empId: p.emp.id, fecha, entrada: p.entrada, salida: p.salida });
+    else st.tramos.push({ id: nuevoId(st), empId: p.empId, fecha: p.fecha, entrada: p.entrada, salida: p.salida });
   }
-  return ok({ cambios: plan.length });
+  for (const p of enCerradas) st.correcciones.push({ fecha: p.fecha, empId: p.empId, motivo, cuando: ahora().fecha });
+  return ok({ cambios: plan.length, omitidos });
+}
+
+/** Modo "al final del día": el día queda igual a lo que muestra el formulario.
+ *  filas: { [empId]: { vino, entrada:'HH:MM', salida:'HH:MM' } } */
+export function guardarDia(st, fecha, filas, motivo = '') {
+  const items = empleadosActivos(st).filter(e => filas[e.id]).map(e => ({ empId: e.id, fecha, ...filas[e.id] }));
+  const r = aplicar(st, planificar(st, items), motivo);
+  if (r.errores) { r.errores = Object.fromEntries(Object.entries(r.errores).map(([k, v]) => [k.split('|')[0], v])); }   // en un solo día, la clave es la persona
+  return r;
+}
+
+/** Registrar o corregir varios días de una vez (por ejemplo, una semana que ya pasó).
+ *  items: [{ empId, fecha:'AAAA-MM-DD', vino, entrada:'HH:MM', salida:'HH:MM' }]. Todo o nada. */
+export function guardarSemana(st, items, motivo = '') {
+  const validos = items.filter(it => st.empleados.some(e => e.id === it.empId));
+  return aplicar(st, planificar(st, validos), motivo);
 }
 
 /** Corrige todos los tramos de un día. cambios: { tramos:[{id, entrada, salida, quitar}], nuevo:{entrada,salida}|null, motivo } */

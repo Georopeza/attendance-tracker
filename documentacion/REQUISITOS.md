@@ -81,6 +81,19 @@ Ejemplos de referencia (turno 9:00–16:00):
 - Desde el desglose se puede **corregir un día** (editar sus tramos) con confirmación y bitácora.
 - Solo semanal: el resumen mensual no lleva desglose por día.
 
+## 7b. Registrar o corregir una semana que ya pasó
+
+En Semana, el botón "Registrar o corregir las horas de esta semana" abre un editor para cualquier semana pasada
+(o la actual hasta hoy): sirve para anotar una semana que no se llevó en la app, o para arreglar un error.
+- Dos vistas: **por día** (todas las personas de un día) y **por persona** (los 7 días de una persona).
+- "Llenar la semana con el horario del turno" pone a todos como asistentes en los días con turno que no tienen
+  horas, para ajustar solo las excepciones.
+- Se trabaja en un borrador (contador de filas editadas, "Descartar"); "Guardar semana" guarda **todo o nada** y
+  marca en rojo lo que está mal. No acepta fechas futuras ni salidas antes de la entrada.
+- Quien tiene varios tramos en un día se corrige con "Corregir el día".
+- Si la semana ya fue entregada, pide **motivo** y el cambio se muestra como diferencia contra lo entregado
+  (igual que "Al final del día" de Hoy en una semana entregada).
+
 ## 8. Cierre de semana
 
 - La semana se **cierra** al entregarla; se guarda una copia de lo entregado.

@@ -2,6 +2,7 @@
 import { cargar, guardar, pedirPersistencia } from './store.js';
 import { RUTAS, acciones, formularios } from './vistas.js';
 import { alEscribirVisita, alCambiarVisita } from './visitas-vistas.js';
+import { alEditarFila, alEscribirMotivo } from './editar-semana.js';
 import { toast, esc } from './ui.js';
 import { fijarZona } from './fechas.js';
 
@@ -38,7 +39,7 @@ addEventListener('hashchange', () => { ui.errorDia = ''; ui.seleccion = null; wi
 
 document.addEventListener('click', async ev => {
   const el = ev.target.closest('[data-a]');
-  if (!el || el.tagName === 'INPUT' && el.type === 'file') return;
+  if (!el || (el.tagName === 'INPUT' && el.type === 'file') || el.tagName === 'SELECT') return;   // archivos y listas se atienden en 'change'
   const f = acciones[el.dataset.a]; if (!f) return;
   ev.preventDefault();
   if (el.dataset.a === 'ver-archivados') { /* casilla: se maneja en change */ return; }
@@ -46,7 +47,7 @@ document.addEventListener('click', async ev => {
 });
 document.addEventListener('change', async ev => {
   const el = ev.target.closest('[data-a]');
-  if (!el || !(el.type === 'file' || el.type === 'checkbox')) return;
+  if (!el || !(el.type === 'file' || el.type === 'checkbox' || el.tagName === 'SELECT')) return;
   const f = acciones[el.dataset.a]; if (!f) return;
   try { persistirYDibujar(await f({ st, ui, d: el.dataset, el })); } catch (e) { console.error(e); toast('No se pudo completar la acción.', 'error'); }
 });
@@ -57,6 +58,9 @@ document.addEventListener('submit', async ev => {
   try { persistirYDibujar(await f({ st, ui, form, submitter: ev.submitter })); } catch (e) { console.error(e); toast('No se pudo guardar.', 'error'); }
 });
 document.addEventListener('input', ev => { if (ev.target.id === 'sel-hora') ui.selHora = ev.target.value; });   // la hora al marcar a varias personas no se pierde al elegir
+// Registrar o corregir una semana: se recuerda lo escrito en cada fila.
+document.addEventListener('input', ev => { if (ev.target.closest('[data-celda]')) alEditarFila(ui, ev.target); if (ev.target.id === 'ed-motivo') alEscribirMotivo(ui, ev.target); });
+document.addEventListener('change', ev => { if (ev.target.closest('[data-celda]')) alEditarFila(ui, ev.target); });
 // Formulario de visita: se recuerda lo escrito y se actualiza el total mientras se escribe.
 document.addEventListener('input', ev => { const form = ev.target.closest('form[data-f="visita"]'); if (form) alEscribirVisita(ui, form); });
 document.addEventListener('change', ev => {
