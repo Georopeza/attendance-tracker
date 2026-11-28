@@ -122,6 +122,18 @@ const esp = ms => new Promise(r => setTimeout(r, ms));
   const copia = JSON.parse(fs.readFileSync(`${OUT}/copia.json`, 'utf8'));
   ok(copia.datos.visitas.registros.length === 5, 'la copia de seguridad incluye las visitas');
 
+  // --- registrar visitas de un día que ya pasó (el formulario queda en ese día)
+  await page.goto(BASE + '#/visitas'); await esp(250);
+  await page.click('[aria-label="Día anterior"]'); await esp(250);
+  ok(await page.locator('text=No hay visitas registradas este día').count() === 1, 'el día anterior está vacío');
+  await page.click('text=+ Registrar visita'); await esp(250);
+  ok(await page.locator('summary:has-text("Fecha y hora: 25/11/2026, 12:00")').count() === 1, 'el formulario queda en el día que se está viendo (25/11, 12:00)');
+  await page.click('label:has(input[name=tipoId]):has-text("Particulares")'); await esp(150);
+  await page.fill('#v-personas', '7'); await page.click('form >> button:text-is("Guardar")'); await esp(300);
+  ok(await page.locator('main .grid.grid-cols-3 b').first().textContent() === '7', 'la visita quedó en el día pasado (7 personas)');
+  await page.click('button:has-text("Ir a hoy")'); await esp(250);
+  ok(await page.locator('main .grid.grid-cols-3 b').first().textContent() === '57', 'hoy no cambió (57 personas)');
+
   // --- apagar y volver a encender el módulo: lo registrado se conserva
   await page.goto(BASE + '#/ajustes'); await esp(250);
   await page.uncheck('input[name=visitasActivo]'); await page.click('text=Guardar ajustes'); await esp(300);

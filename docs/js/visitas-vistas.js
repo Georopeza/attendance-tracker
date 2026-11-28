@@ -234,7 +234,8 @@ const fallo = r => { if (r.error) { toast(r.error, 'error'); return true; } retu
 const otrosDeLaLista = (st, e) => V.entidadesDe(st, e.tipoId).filter(x => x.id !== e.id);
 
 export const accionesVisitas = {
-  'nueva-visita': ({ st, ui }) => { ui.vForm = formNuevo(st); location.hash = '#/visita/nueva'; return null; },
+  // Si se está viendo un día pasado, la visita nueva queda en ese día (a las 12:00, que se puede cambiar).
+  'nueva-visita': ({ st, ui }) => { ui.vForm = formNuevo(st, ui.vFecha ? { fecha: ui.vFecha, hora: '12:00', rHora: '12:00' } : {}); location.hash = '#/visita/nueva'; return null; },
   'editar-visita': ({ d, ui }) => { ui.vForm = null; location.hash = `#/visita/${d.id}`; return null; },
   'eliminar-visita': async ({ st, d, ui }) => {
     const r = st.visitas.registros.find(x => x.id === Number(d.id));
@@ -305,7 +306,8 @@ export const formulariosVisitas = {
     if (r.error) { f.error = r.error; toast(r.error, 'error'); return true; }
     if (submitter && submitter.name === 'otra') {
       const rec = f.recorrido === 'nuevo' ? 'r' + r.registro.recorridoId : f.recorrido;
-      ui.vForm = formNuevo(st, { tipoId: f.tipoId, recorrido: rec, fecha: f.fecha });
+      const pasado = f.fecha !== ahora().fecha;      // en un día pasado se conserva la hora; hoy vuelve a ser "ahora"
+      ui.vForm = formNuevo(st, { tipoId: f.tipoId, recorrido: rec, fecha: f.fecha, ...(pasado ? { hora: f.hora, rHora: f.hora } : {}) });
       toast('Guardada. Registra la siguiente.'); window.scrollTo(0, 0); return true;
     }
     ui.vForm = null; toast('Visita guardada.'); location.hash = '#/visitas'; return true;
